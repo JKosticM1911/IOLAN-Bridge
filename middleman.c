@@ -57,6 +57,9 @@ int main(void) {
         // CLIENT SESSION LOOP (request/response cycle) ------------------------
 
         while (1) {
+
+            tcflush(tty, TCIOFLUSH);
+
             int n = read(cs, tcp, sizeof(tcp) - 1); // read TCP request
             if (n <= 0) break;                      // disconnect or error → exit session
 

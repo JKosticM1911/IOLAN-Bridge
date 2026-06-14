@@ -46,7 +46,7 @@ class test {
         # Set Serial Port Data
         $this.DB9               = New-Object System.IO.Ports.SerialPort
         $this.DB9.PortName      = "COM9"
-        $this.DB9.BaudRate      = 19200
+        $this.DB9.BaudRate      = 9600
         $this.DB9.Parity        = [System.IO.Ports.Parity]::Even
         $this.DB9.DataBits      = 7
         $this.DB9.StopBits      = [System.IO.Ports.StopBits]::One
@@ -126,23 +126,13 @@ class test {
 
             # Receive response via tcp
             if ($this.TCP.Poll(1000000, [System.Net.Sockets.SelectMode]::SelectRead)) {
-                #$count = $this.TCP.Receive($this.buffer)
-                #
-                #if ($count -gt 0) {
-                #    $raw_tcp_rx = [System.Text.Encoding]::ASCII.GetString($this.buffer,0,$count)
-                #
-                #    Write-Host "TCP RX: `":$raw_tcp_rx"
-                #}
-
-                # AI INSET
                 $count = $this.TCP.Receive($this.buffer)
-
-                $hex = ($this.buffer[0..($count-1)] |
-                ForEach-Object { $_.ToString("X2") }) -join ' '
-
-                Write-Host "TCP RX HEX: $hex"
-                # AI INSERT
-
+                
+                if ($count -gt 0) {
+                    $raw_tcp_rx = [System.Text.Encoding]::ASCII.GetString($this.buffer,0,$count)
+                
+                    Write-Host "TCP RX: `"$raw_tcp_rx`n"
+                }
 
             } else {
                 Write-Host "(No response) `n"
