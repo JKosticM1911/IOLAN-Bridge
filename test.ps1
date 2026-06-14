@@ -93,7 +93,7 @@ class test {
                 $exit = Read-Host "Enter exit or enter to try again"
 
                 if ($exit -eq "exit"){
-                    return -1;
+                    return;
                 }else{
                     continue;
                 }
