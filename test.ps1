@@ -36,7 +36,7 @@ class test {
 
         # Set TCP Endpoint Data
         # Parse IPv6 WITHOUT interface name
-        $ip = [System.Net.IPAddress]::Parse("fe80::280:d4ff:fe32:80a8%2")
+        $ip = [System.Net.IPAddress]::Parse("fe80::280:d4ff:fe32:80a8")
 
         $this.TCPEND = [System.Net.IPEndPoint]::new(
             $ip,                # 
@@ -45,7 +45,7 @@ class test {
 
         # Set Serial Port Data
         $this.DB9               = New-Object System.IO.Ports.SerialPort
-        $this.DB9.PortName      = "/dev/ttyUSB0"
+        $this.DB9.PortName      = "COM9"
         $this.DB9.BaudRate      = 19200
         $this.DB9.Parity        = [System.IO.Ports.Parity]::Even
         $this.DB9.DataBits      = 7
@@ -63,21 +63,7 @@ class test {
         $this.DB9.Close()
     }
 
-    [void]TCP_connect() {
-
-
-    }
-
-    # Connecting to IOLAN via DB9===============================================
-
-    [void]DB9_connect() {
-
-
-    }
-
     # Main Loop ================================================================
-
-
 
     [void]main() {
 
@@ -132,7 +118,7 @@ class test {
 
             Write-Host ("SIM RX: :`"$raw_DB9_rx`"")
 
-            # send serial send example serial reDB9onse
+            # send serial send example serial response
             $example = ":01040200CE2B"
 
             $this.DB9.Write($example)
@@ -140,13 +126,24 @@ class test {
 
             # Receive response via tcp
             if ($this.TCP.Poll(1000000, [System.Net.Sockets.SelectMode]::SelectRead)) {
+                #$count = $this.TCP.Receive($this.buffer)
+                #
+                #if ($count -gt 0) {
+                #    $raw_tcp_rx = [System.Text.Encoding]::ASCII.GetString($this.buffer,0,$count)
+                #
+                #    Write-Host "TCP RX: `":$raw_tcp_rx"
+                #}
+
+                # AI INSET
                 $count = $this.TCP.Receive($this.buffer)
 
-                if ($count -gt 0) {
-                    $raw_tcp_rx = [System.Text.Encoding]::ASCII.GetString($this.buffer,0,$count)
+                $hex = ($this.buffer[0..($count-1)] |
+                ForEach-Object { $_.ToString("X2") }) -join ' '
 
-                    Write-Host "TCP RX: `":$raw_tcp_rx"
-                }
+                Write-Host "TCP RX HEX: $hex"
+                # AI INSERT
+
+
             } else {
                 Write-Host "(No response) `n"
             }

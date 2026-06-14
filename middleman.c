@@ -84,7 +84,9 @@ int main(void) {
             // - run decision logic
             // - build final response
 
-            write(cs, ser, strlen(ser)); // return response to network client
+            if (n > 0) {
+                write(cs, ser, n);
+            }
         }
         close(cs); // close TCP connection
     } // end loop
