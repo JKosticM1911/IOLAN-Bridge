@@ -36,7 +36,7 @@ class test {
 
         # Set TCP Endpoint Data
         # Parse IPv6 WITHOUT interface name
-        $ip = [System.Net.IPAddress]::Parse("fe80::280:d4ff:fe32:80a8")
+        $ip = [System.Net.IPAddress]::Parse("fe80::280:d4ff:fe32:80a8%2")
 
         $this.TCPEND = [System.Net.IPEndPoint]::new(
             $ip,                # 
