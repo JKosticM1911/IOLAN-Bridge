@@ -65,6 +65,23 @@ class test {
 
     [void]TCP_connect() {
 
+
+    }
+
+    # Connecting to IOLAN via DB9===============================================
+
+    [void]DB9_connect() {
+
+
+    }
+
+    # Main Loop ================================================================
+
+
+
+    [void]main() {
+
+        # try to connect via TCP
         while (1){
             try{
                 Write-Host "Connecting TCP->IOLAN: " -NoNewline
@@ -76,20 +93,15 @@ class test {
                 $exit = Read-Host "Enter exit or enter to try again"
 
                 if ($exit -eq "exit"){
-                    return;
+                    return -1;
                 }else{
                     continue;
                 }
             } break;
         }
-    }
 
-    # Connecting to IOLAN via DB9===============================================
-
-    [void]DB9_connect() {
-
+        # Connect via serial DB9
         $validPorts = [System.IO.Ports.SerialPort]::GetPortNames()
-
         Write-Host "Valid Port Names: $validPorts"
 
         Write-Host "Connecting SIM->IOLAN: " -NoNewline
@@ -100,15 +112,8 @@ class test {
             Write-Host ("FAILED") -ForegroundColor DarkYellow
             Write-Host "Exception: $($_.Exception.Message)" -ForegroundColor Red
         }
-    }
 
-    # Main Loop ================================================================
-    [void]main() {
-
-        $this.TCP_connect()
-
-        $this.DB9_connect()
-
+        # Main loop
         while ($true) {
             $tx = Read-Host "TCP TX"
 
