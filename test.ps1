@@ -55,7 +55,7 @@ class test {
         $this.DB9.WriteTimeout  = 200
 
         #create buffers
-        $this.buffer = New-Object byte[] 40961
+        $this.buffer = New-Object byte[] 1024
     }
 
     [void]des() {
@@ -135,8 +135,8 @@ class test {
             # send serial send example serial reDB9onse
             $example = ":01040200CE2B"
 
-            $this.DB9.Write($example + "`r`n")
-            Write-Host("SIM TX: `"$example`"")
+            $this.DB9.Write($example)
+            Write-Host("SIM TX: `"$example")
 
             # Receive response via tcp
             if ($this.TCP.Poll(1000000, [System.Net.Sockets.SelectMode]::SelectRead)) {
@@ -145,11 +145,13 @@ class test {
                 if ($count -gt 0) {
                     $raw_tcp_rx = [System.Text.Encoding]::ASCII.GetString($this.buffer,0,$count)
 
-                    Write-Host "TCP RX: `":$raw_tcp_rx`" `n"
+                    Write-Host "TCP RX: `":$raw_tcp_rx"
                 }
             } else {
                 Write-Host "(No response) `n"
             }
+
+            [Array]::Clear($this.buffer, 0, $this.buffer.Length)
         } # end Loop
 
     } # END MAIN
