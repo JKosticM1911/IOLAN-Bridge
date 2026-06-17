@@ -67,6 +67,52 @@ class test {
 
     [void]main() {
 
+        #Configure DB9 port name
+        while (1) {
+
+            $validPorts = [System.IO.Ports.SerialPort]::GetPortNames()
+            Write-Host ("Valid COM ports:`n"  + ($validPorts -join "`n")) -ForegroundColor Green
+
+            $input = Read-Host "Enter COM port or 'idk' to use unplug and plug detection"
+            if ($input -ne "idk") {
+
+                # check coms and make sure input is a valid com
+                if ($validPorts -contains $input) {
+                    Write-Host "Valid COM port detected: $input" -ForegroundColor Green
+                    break;
+                }else{
+                    Write-Host "Invalid COM port" -ForegroundColor Red
+                    continue
+                }
+
+                $this.DB9.PortName = $input
+                Write-Host ("COM Port set to: " + $input) -ForegroundColor Green
+            }
+
+            $reply = ""
+
+            Write-Host "Please confirm that your coms cable is NOT plugged in." -ForegroundColor Green
+            Read-Host "Press Enter to continue"
+            Write-Host "Fetching COMS..." -ForegroundColor Green
+
+            $hay = [System.IO.Ports.SerialPort]::GetPortNames()
+
+            Write-Host ("COM Ports: " + ($hay -join " ")) -ForegroundColor Green
+
+            Write-Host "Please confirm that your coms cable IS plugged in." -ForegroundColor Green
+            Read-Host "Press Enter to continue"
+
+            $haystack = [System.IO.Ports.SerialPort]::GetPortNames()
+
+            # get the first string that is in haystack but not in hay
+            $COM = $haystack | Where-Object {$_ -notin $hay} # get COM ports
+
+            Write-Host ("COM Port should be: " + ($COM)) -ForegroundColor Green
+
+            $this.DB9.Close() # close port if open
+            $this.DB9.PortName = $COM
+        }
+
         # try to connect via TCP
         while (1){
             try{
@@ -101,6 +147,9 @@ class test {
 
         # Main loop
         while ($true) {
+
+            $this.DB9.DiscardInBuffer()
+
             $tx = Read-Host "TCP TX"
 
             if ($tx -eq "exit") {
@@ -116,13 +165,13 @@ class test {
             # receive data via serial
             $raw_DB9_rx = $this.DB9.ReadExisting()
 
-            Write-Host ("SIM RX: :`"$raw_DB9_rx`"")
+            Write-Host ("SIM RX: `"$raw_DB9_rx`"")
 
             # send serial send example serial response
             $example = ":01040200CE2B"
 
             $this.DB9.Write($example)
-            Write-Host("SIM TX: `"$example")
+            Write-Host("SIM TX: `"$example`"")
 
             # Receive response via tcp
             if ($this.TCP.Poll(1000000, [System.Net.Sockets.SelectMode]::SelectRead)) {
