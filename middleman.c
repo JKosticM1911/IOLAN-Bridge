@@ -79,45 +79,33 @@ int main(void) {
             ser[n] = 0; // null-terminate serial response
 
             // Parse Chiller command:
-            char vfd_kws[]; // VFD power in kw
-            char vfd_per[]; // VFD power in percentage
-            char pres_pv[]; // discharge pressure present value
-            char flow_pv[]; // discharge Flow rate present value
-            char temp_sp[]; // discharge temp set point
-            char temp_pv[]; // discharge temp present value
+            char vfd_kws[10]; // VFD power in kw
+            char vfd_per[10]; // VFD power in percentage
+            char pres_pv[10]; // discharge pressure present value
+            char flow_pv[10]; // discharge Flow rate present value
+            char temp_sp[10]; // discharge temp set point
+            char temp_pv[10]; // discharge temp present value
 
-            switch (tcp) {
-                case "PWM?":
-                    out = "1";
-                    break;
-    
-                case "AUXPCFLOWRATE?":
-                    out = "2";
-                    break;
+            char *out = "";
 
-                case "IDN":
-                    out = "3";
-                    break;
-
-                case "VFDPWR?":
-                    out = "4";
-                    break;
-
-                case "VFDACTPRESSURE?":
-                    out = "5";
-                    break;
-
-                case "SETTEMP?":
-                    out = "6";
-                    break;
-
-                case "TEMP?":
-                    out = "7";
-                    break;
-
-                case "FLTS1A?":
-                    out = "8";
-                    break;
+            if (strcmp(tcp, "PWM?") == 0) {
+                out = "1";
+            }else if (strcmp(tcp, "AUXPCFLOWRATE?") == 0) {
+                out = "2";
+            }else if (strcmp(tcp, "IDN") == 0) {
+                out = "3";
+            }else if (strcmp(tcp, "VFDPWR?") == 0) {
+                out = "4";
+            }else if (strcmp(tcp, "VFDACTPRESSURE?") == 0) {
+                out = "5";
+            }else if (strcmp(tcp, "SETTEMP?") == 0) {
+                out = "6";
+            }else if (strcmp(tcp, "TEMP?") == 0) {
+                out = "7";
+            }else if (strcmp(tcp, "FLTS1A?") == 0) {
+                out = "8";
+            }else {
+                out = "UNKNOWN";
             }
 
             if (n > 0) {
