@@ -46,7 +46,7 @@ class test {
 
         # Set Serial Port Data
         $this.DB9               = New-Object System.IO.Ports.SerialPort
-        $this.DB9.PortName      = "COM9"
+        $this.DB9.PortName      = "COM8"
         $this.DB9.BaudRate      = 9600
         $this.DB9.Parity        = [System.IO.Ports.Parity]::Even
         $this.DB9.DataBits      = 7
@@ -69,24 +69,9 @@ class test {
 
     [void]main() {
 
-        while ($true) { # try to connect loop
-            try { # try to connect first
-                $this.connect()
-            }catch{
-                Write-Host "Commands:"
-                Write-Host "exit        exits the program"
-                Write-Host "Connect     attempt to connect again"
+        $this.connect_tcp();
 
-                $e = Read-Host
-                switch ($e) {
-                    "exit" {return}
-                    "connect" {$this.connect()}
-                    default {continue}
-                }
-            }
-            Write-Host "`nEnter an cmd (h to print cmd list)`n"
-            break;
-        }
+        $this.connect_db9();
 
         while ($true) { # Main loop
             $tx = Read-Host "TCP TX"
@@ -115,7 +100,7 @@ class test {
         Write-Host "FLTS1A?             Read alarm flags 1-2`n"
     }
 
-    [void]connect() {
+    [void]connect_tcp() {
         try { # try to connect via TCP
             Write-Host "Connecting TCP->IOLAN: " -NoNewline
             $this.TCP.Connect($this.TCPEND) # open the serial port
@@ -124,53 +109,59 @@ class test {
         }catch{ # if failed show error and exit
             Write-Host ("FAILED") -ForegroundColor Red
             Write-Host "Exception: $($_.Exception.Message)" -ForegroundColor Red
-            return
         }
-        
-        try { # try to connect via DB9 with hardcoded vals
-            Write-Host "Connecting IOLAN->SIM: " -NoNewline
-            $this.DB9.Open()
-            Write-Host "Connected" -ForegroundColor Green
-            return
-        }catch{
-            $port = $this.DB9.PortName
-            Write-Host ("FAILED using $port`n") -ForegroundColor Red
-        }
+    }
 
-        # show valid port options
-        $validPorts = [System.IO.Ports.SerialPort]::GetPortNames()
-        Write-Host ("Valid COM ports:"  + ($validPorts -join " ")) -ForegroundColor Green
-
-        $input = Read-Host "Enter COM port or 'idk' to use unplug and plug detection"
-        if ($input -ne "idk") {
-            # check coms and make sure input is a valid com
-            if ($validPorts -contains $input) {
-                Write-Host "COM Port is Valid: $input" -ForegroundColor Green
-                    
-            }else{ 
-                Write-Host "Invalid COM port" -ForegroundColor Red
+    [void]connect_db9() {
+        while ($true) {
+            try { # try to connect via DB9 with hardcoded vals
+                Write-Host "Connecting IOLAN->SIM: " -NoNewline
+                $this.DB9.Open()
+                Write-Host "Connected" -ForegroundColor Green
                 return
+            }catch{
+                # show failed port name
+                $port = $this.DB9.PortName
+                Write-Host ("FAILED using $port`n") -ForegroundColor Red
             }
-            $this.DB9.PortName = $input
-            Write-Host ("COM Port set to: $input `n") -ForegroundColor Green
-            $this.connect()
+
+            # show valid port options
+            $validPorts = [System.IO.Ports.SerialPort]::GetPortNames()
+            Write-Host ("Valid COM ports:"  + ($validPorts -join " ")) -ForegroundColor Green
+
+            # menu prompt
+            $input = Read-Host "Enter COM port, 'exit', or 'idk' to use unplug and plug detection"
+            if ($input -eq "exit") { # exit if needed 
+                return
+            }if ($input -ne "idk") {
+                # check coms and make sure input is a valid com
+                if ($validPorts -contains $input) {
+                    Write-Host "COM Port is Valid: $input" -ForegroundColor Green
+
+                }else{ 
+                    Write-Host "Invalid COM port" -ForegroundColor Red
+                    continue
+                }
+                $this.DB9.PortName = $input
+                Write-Host ("COM Port set to: $input `n") -ForegroundColor Green
+                continue
+            }
+
+            $reply = ""
+            Write-Host "Please confirm that your coms cable is NOT plugged in."     -ForegroundColor Green
+            Read-Host "Press Enter to continue"
+            Write-Host "Fetching COMS..." -ForegroundColor Green
+            $hay = [System.IO.Ports.SerialPort]::GetPortNames()
+            Write-Host ("COM Ports: " + ($hay -join " ")) -ForegroundColor Green
+            Write-Host "Please confirm that your coms cable IS plugged in." -ForegroundColor    Green
+            Read-Host "Press Enter to continue"
+            $haystack = [System.IO.Ports.SerialPort]::GetPortNames()
+            # get the first string that is in haystack but not in hay
+            $COM = $haystack | Where-Object {$_ -notin $hay} # get COM ports
+            Write-Host ("COM Port should be: " + ($COM)) -ForegroundColor Green
+            $this.DB9.Close() # close port if open
+            $this.DB9.PortName = $COM
         }
-
-        $reply = ""
-        Write-Host "Please confirm that your coms cable is NOT plugged in." -ForegroundColor Green
-        Read-Host "Press Enter to continue"
-        Write-Host "Fetching COMS..." -ForegroundColor Green
-        $hay = [System.IO.Ports.SerialPort]::GetPortNames()
-        Write-Host ("COM Ports: " + ($hay -join " ")) -ForegroundColor Green
-        Write-Host "Please confirm that your coms cable IS plugged in." -ForegroundColor Green
-        Read-Host "Press Enter to continue"
-        $haystack = [System.IO.Ports.SerialPort]::GetPortNames()
-        # get the first string that is in haystack but not in hay
-        $COM = $haystack | Where-Object {$_ -notin $hay} # get COM ports
-        Write-Host ("COM Port should be: " + ($COM)) -ForegroundColor Green
-        $this.DB9.Close() # close port if open
-        $this.DB9.PortName = $COM
-
     }
 
     [void]send_recv($tx) {
