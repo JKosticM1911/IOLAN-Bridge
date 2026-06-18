@@ -30,9 +30,9 @@ static double yoink_reg(const char *cmd, size_t reg){
 
     char slice[5] = {0};
 
-    memcpy(slice, cmd + offset, 4);
+    memcpy(slice, cmd + start, 4);
 
-    return (double)(int16_t)strtol(hex, NULL, 16);
+    return (double)(int16_t)strtol(slice, NULL, 16);
 }
 
 int main(void) {
@@ -78,7 +78,7 @@ int main(void) {
 
             char *cmd = "";
 
-            char basic[] = ":01170000000C0000000000DC" // HRS Read All command
+            char basic[] = ":01170000000C0000000000DC"; // HRS Read All command
 
             // Parse TCP Request
             if (strcmp(tcp, "PWM?") == 0) {
@@ -137,7 +137,7 @@ int main(void) {
             // discharge temp present value
             double temp_pv = yoink_reg(ser, 0) / 10; 
 
-            char send[32] = {0};
+            char *send[32] = {0};
 
             // Select correct return string
             if (strcmp(tcp, "PWM?") == 0) {
@@ -170,4 +170,6 @@ int main(void) {
         }
         close(cs); // close TCP connection
     } // end loop
+
+    return 0;
 }
