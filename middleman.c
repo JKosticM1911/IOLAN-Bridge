@@ -59,8 +59,6 @@ int main(void) {
         // CLIENT SESSION LOOP (request/response cycle) ------------------------
         while (1) {
 
-            tcflush(tty, TCIOFLUSH);                // flush buffer
-
             int n = read(cs, tcp, sizeof(tcp) - 1); // read TCP request
             if (n <= 0) break;                      // disconnect or error → exit session
 
@@ -81,12 +79,12 @@ int main(void) {
             ser[n] = 0; // null-terminate serial response
 
             // Parse Chiller command:
-            char vfd_kws[] // VFD power in kw
-            char vfd_per[] // VFD power in percentage
-            char pres_pv[] // discharge pressure present value
-            char flow_pv[] // discharge Flow rate present value
-            char temp_sp[] // discharge temp set point
-            char temp_pv[] // discharge temp present value
+            char vfd_kws[]; // VFD power in kw
+            char vfd_per[]; // VFD power in percentage
+            char pres_pv[]; // discharge pressure present value
+            char flow_pv[]; // discharge Flow rate present value
+            char temp_sp[]; // discharge temp set point
+            char temp_pv[]; // discharge temp present value
 
             switch (tcp) {
                 case "PWM?":
