@@ -22,8 +22,9 @@ class test {
     # TCP EndPoint Object
     [System.Net.IPEndPoint]$TCPEND
 
-    #buffer
-    $buffer
+    #buffers
+    $rxbuff
+    $txbuff
 
     # Constructor ==============================================================
     test() {
@@ -55,7 +56,8 @@ class test {
         $this.DB9.WriteTimeout  = 200
 
         #create buffers
-        $this.buffer = New-Object byte[] 1024
+        $this.rxbuff = New-Object byte[] 1024
+        $this.txbuff = New-Object byte[] 1024
     }
 
     [void]des() {
@@ -67,130 +69,142 @@ class test {
 
     [void]main() {
 
-        #Configure DB9 port name
-        while (1) {
-
-            $validPorts = [System.IO.Ports.SerialPort]::GetPortNames()
-            Write-Host ("Valid COM ports:`n"  + ($validPorts -join "`n")) -ForegroundColor Green
-
-            $input = Read-Host "Enter COM port or 'idk' to use unplug and plug detection"
-            if ($input -ne "idk") {
-
-                # check coms and make sure input is a valid com
-                if ($validPorts -contains $input) {
-                    Write-Host "Valid COM port detected: $input" -ForegroundColor Green
-                    break;
-                }else{
-                    Write-Host "Invalid COM port" -ForegroundColor Red
-                    continue
-                }
-
-                $this.DB9.PortName = $input
-                Write-Host ("COM Port set to: " + $input) -ForegroundColor Green
-            }
-
-            $reply = ""
-
-            Write-Host "Please confirm that your coms cable is NOT plugged in." -ForegroundColor Green
-            Read-Host "Press Enter to continue"
-            Write-Host "Fetching COMS..." -ForegroundColor Green
-
-            $hay = [System.IO.Ports.SerialPort]::GetPortNames()
-
-            Write-Host ("COM Ports: " + ($hay -join " ")) -ForegroundColor Green
-
-            Write-Host "Please confirm that your coms cable IS plugged in." -ForegroundColor Green
-            Read-Host "Press Enter to continue"
-
-            $haystack = [System.IO.Ports.SerialPort]::GetPortNames()
-
-            # get the first string that is in haystack but not in hay
-            $COM = $haystack | Where-Object {$_ -notin $hay} # get COM ports
-
-            Write-Host ("COM Port should be: " + ($COM)) -ForegroundColor Green
-
-            $this.DB9.Close() # close port if open
-            $this.DB9.PortName = $COM
-        }
-
-        # try to connect via TCP
-        while (1){
-            try{
-                Write-Host "Connecting TCP->IOLAN: " -NoNewline
-                $this.TCP.Connect($this.TCPEND) # open the serial port
-                Write-Host "Connected" -ForegroundColor Green
+        while ($true) { # try to connect loop
+            try { # try to connect first
+                $this.connect()
             }catch{
-                Write-Host ("FAILED") -ForegroundColor DarkYellow
-                Write-Host "Exception: $($_.Exception.Message)" -ForegroundColor Red
-                $exit = Read-Host "Enter exit or enter to try again"
+                Write-Host "Commands:"
+                Write-Host "exit        exits the program"
+                Write-Host "Connect     attempt to connect again"
 
-                if ($exit -eq "exit"){
-                    return;
-                }else{
-                    continue;
+                $e = Read-Host
+                switch ($e) {
+                    "exit" {return}
+                    "connect" {$this.connect()}
+                    default {continue}
                 }
-            } break;
-        }
-
-        # Connect via serial DB9
-        $validPorts = [System.IO.Ports.SerialPort]::GetPortNames()
-        Write-Host "Valid Port Names: $validPorts"
-
-        Write-Host "Connecting SIM->IOLAN: " -NoNewline
-        try{
-            $this.DB9.Open()
-            Write-Host "Connected`n" -ForegroundColor Green
-        }catch{
-            Write-Host ("FAILED") -ForegroundColor DarkYellow
-            Write-Host "Exception: $($_.Exception.Message)" -ForegroundColor Red
-        }
-
-        # Main loop
-        while ($true) {
-
-            $this.DB9.DiscardInBuffer()
-
-            $tx = Read-Host "TCP TX"
-
-            if ($tx -eq "exit") {
-                break}
-
-            # Send ASCII text
-            $bytes = [System.Text.Encoding]::ASCII.GetBytes($tx)
-            [void]$this.TCP.Send($bytes)
-
-            # wait 50 ms before receiving message
-            Start-Sleep -Milliseconds 50
-
-            # receive data via serial
-            $raw_DB9_rx = $this.DB9.ReadExisting()
-
-            Write-Host ("SIM RX: `"$raw_DB9_rx`"")
-
-            # send serial send example serial response
-            $example = ":01040200CE2B"
-
-            $this.DB9.Write($example)
-            Write-Host("SIM TX: `"$example`"")
-
-            # Receive response via tcp
-            if ($this.TCP.Poll(1000000, [System.Net.Sockets.SelectMode]::SelectRead)) {
-                $count = $this.TCP.Receive($this.buffer)
-                
-                if ($count -gt 0) {
-                    $raw_tcp_rx = [System.Text.Encoding]::ASCII.GetString($this.buffer,0,$count)
-                
-                    Write-Host "TCP RX: `"$raw_tcp_rx`n"
-                }
-
-            } else {
-                Write-Host "(No response) `n"
             }
+            Write-Host "`nEnter an cmd (h to print cmd list)`n"
+            break;
+        }
 
-            [Array]::Clear($this.buffer, 0, $this.buffer.Length)
-        } # end Loop
+        while ($true) { # Main loop
+            $tx = Read-Host "TCP TX"
+            switch ($tx) {
+                "exit"   {return}
+                'h'       {$this.help()}
+                "clear"   {Clear-Host}
+                default {$this.send_recv($tx)}
+            }
+        }
+    }
 
-    } # END MAIN
+    [void]help() {
+        Write-Host "General Commands:"
+        Write-Host "exit                Exit the program"
+        Write-Host "clear               Clear the console`n"
+
+        Write-Host "Chiller Commands:"
+        Write-Host "PWM?                Start the chiller via serial"
+        Write-Host "AUXPCFLOWRATE?      Stop the chiller via serial"
+        Write-Host "IDN                 Read the chiller data"
+        Write-Host "VFDPWR?             Attempt to connect to the chiller"
+        Write-Host "VFDACTPRESSURE?     Set the chiller slave address"
+        Write-Host "SETTEMP?            Read the set discharge temp"
+        Write-Host "TEMP?               Read the present discharge temp"
+        Write-Host "FLTS1A?             Read alarm flags 1-2`n"
+    }
+
+    [void]connect() {
+        try { # try to connect via TCP
+            Write-Host "Connecting TCP->IOLAN: " -NoNewline
+            $this.TCP.Connect($this.TCPEND) # open the serial port
+            Write-Host "Connected" -ForegroundColor Green
+
+        }catch{ # if failed show error and exit
+            Write-Host ("FAILED") -ForegroundColor Red
+            Write-Host "Exception: $($_.Exception.Message)" -ForegroundColor Red
+            return
+        }
+        
+        try { # try to connect via DB9 with hardcoded vals
+            Write-Host "Connecting IOLAN->SIM: " -NoNewline
+            $this.DB9.Open()
+            Write-Host "Connected" -ForegroundColor Green
+            return
+        }catch{
+            $port = $this.DB9.PortName
+            Write-Host ("FAILED using $port`n") -ForegroundColor Red
+        }
+
+        # show valid port options
+        $validPorts = [System.IO.Ports.SerialPort]::GetPortNames()
+        Write-Host ("Valid COM ports:"  + ($validPorts -join " ")) -ForegroundColor Green
+
+        $input = Read-Host "Enter COM port or 'idk' to use unplug and plug detection"
+        if ($input -ne "idk") {
+            # check coms and make sure input is a valid com
+            if ($validPorts -contains $input) {
+                Write-Host "COM Port is Valid: $input" -ForegroundColor Green
+                    
+            }else{ 
+                Write-Host "Invalid COM port" -ForegroundColor Red
+                return
+            }
+            $this.DB9.PortName = $input
+            Write-Host ("COM Port set to: $input `n") -ForegroundColor Green
+            $this.connect()
+        }
+
+        $reply = ""
+        Write-Host "Please confirm that your coms cable is NOT plugged in." -ForegroundColor Green
+        Read-Host "Press Enter to continue"
+        Write-Host "Fetching COMS..." -ForegroundColor Green
+        $hay = [System.IO.Ports.SerialPort]::GetPortNames()
+        Write-Host ("COM Ports: " + ($hay -join " ")) -ForegroundColor Green
+        Write-Host "Please confirm that your coms cable IS plugged in." -ForegroundColor Green
+        Read-Host "Press Enter to continue"
+        $haystack = [System.IO.Ports.SerialPort]::GetPortNames()
+        # get the first string that is in haystack but not in hay
+        $COM = $haystack | Where-Object {$_ -notin $hay} # get COM ports
+        Write-Host ("COM Port should be: " + ($COM)) -ForegroundColor Green
+        $this.DB9.Close() # close port if open
+        $this.DB9.PortName = $COM
+
+    }
+
+    [void]send_recv($tx) {
+
+        $this.DB9.DiscardInBuffer()
+        $this.DB9.DiscardOutBuffer() 
+
+        # Send ASCII text
+        $bytes = [System.Text.Encoding]::ASCII.GetBytes($tx)
+        [void]$this.TCP.Send($bytes)
+        # wait 50 ms before receiving message
+        Start-Sleep -Milliseconds 50
+        # receive data via serial
+        $raw_DB9_rx = $this.DB9.ReadExisting()
+        Write-Host ("SIM RX: `"$raw_DB9_rx`"")
+        # send serial send example serial response
+        $example = ":01040200CE2B"
+        $this.DB9.Write($example)
+        Write-Host("SIM TX: `"$example`"")
+        # Receive response via tcp
+        if ($this.TCP.Poll(1000000, [System.Net.Sockets.SelectMode]::SelectRead)) {
+            # atempt to read count chars from TCP into buffer
+            $count = $this.TCP.Receive($this.rxbuff)
+            
+            if ($count -gt 0) {
+                $raw_tcp_rx = [System.Text.Encoding]::ASCII.GetString($this.rxbuff,0,$count)
+                Write-Host "TCP RX: `"$raw_tcp_rx`"`n"
+            }
+        } else {
+            Write-Host "(No response) `n"
+        }
+        [Array]::Clear($this.rxbuff, 0, $this.rxbuff.Length)
+
+    }
 
 } # END  TEST ==================================================================
 

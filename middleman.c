@@ -27,7 +27,9 @@ int main(void) {
     int tty, ls, cs;           // tty=serial, ls=listen socket, cs=client socket
     struct sockaddr_in6 a;     // IPv6 socket address
     socklen_t l;               // length of address struct
-    char tcp[1024], ser[1024]; // buffers for TCP and serial data
+    char tcp[1024];            // buffers for TCP Input data
+    char ser[1024];            // buffer for Serial Output Data
+    char out[1024];            // buffer for TCP reply data
 
     // SERIAL PORT INITIALIZATION ----------------------------------------------
     tty = SDK_openPort(0, O_RDWR | O_NONBLOCK); // open serial port 0 (non-blocking)
@@ -86,8 +88,42 @@ int main(void) {
             char temp_sp[] // discharge temp set point
             char temp_pv[] // discharge temp present value
 
+            switch (tcp) {
+                case "PWM?":
+                    out = "1";
+                    break;
+    
+                case "AUXPCFLOWRATE?":
+                    out = "2";
+                    break;
+
+                case "IDN":
+                    out = "3";
+                    break;
+
+                case "VFDPWR?":
+                    out = "4";
+                    break;
+
+                case "VFDACTPRESSURE?":
+                    out = "5";
+                    break;
+
+                case "SETTEMP?":
+                    out = "6";
+                    break;
+
+                case "TEMP?":
+                    out = "7";
+                    break;
+
+                case "FLTS1A?":
+                    out = "8";
+                    break;
+            }
+
             if (n > 0) {
-                write(cs, ser, n);
+                write(cs, out, strlen(out));
             }
         }
         close(cs); // close TCP connection
