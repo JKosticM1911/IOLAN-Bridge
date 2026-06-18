@@ -178,7 +178,7 @@ class test {
         $raw_DB9_rx = $this.DB9.ReadExisting()
         Write-Host ("SIM RX: `"$raw_DB9_rx`"")
         # send serial send example serial response
-        $example = ":01040200CE2B"
+        $example = ":000000007B0086000300040005000600070008000900100011001200ED42FF"
         $this.DB9.Write($example)
         Write-Host("SIM TX: `"$example`"")
         # Receive response via tcp
