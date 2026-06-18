@@ -126,16 +126,16 @@ int main(void) {
             double vfd_kw;  // not supported by HRS
 
             // discharge pressure present value
-            double pres_pv = yoink_reg(ser, 2) / 100;
+            double pres_pv = yoink_reg(ser, 1) / 100;
 
             // discharge Flow rate present value
             double flow_pv; // not supported by HRS 
 
             // discharge temp set point
-            double temp_sp = yoink_reg(ser, 11) / 10; 
+            double temp_sp = yoink_reg(ser, 12) / 10;
 
             // discharge temp present value
-            double temp_pv = yoink_reg(ser, 0) / 10; 
+            double temp_pv = yoink_reg(ser, 0) / 10;
 
             if (strcmp(tcp, "PWM?") == 0) {
                 snprintf(out, sizeof(out), "TODO-special");
