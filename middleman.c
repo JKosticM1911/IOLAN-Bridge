@@ -85,7 +85,7 @@ int main(void) {
                 cmd = "TODO-special";
             }else if (strcmp(tcp, "AUXPCFLOWRATE?") == 0) {
                 cmd = "NOT SUPPORTED";
-            else if (strcmp(tcp, "AUXPCWTEMP?") == 0) {
+            }else if (strcmp(tcp, "AUXPCWTEMP?") == 0) {
                 cmd = "NOT SUPPORTED";
             }else if (strcmp(tcp, "IDN") == 0) {
                 cmd = "HARDCODED";
@@ -137,39 +137,36 @@ int main(void) {
             // discharge temp present value
             double temp_pv = yoink_reg(ser, 0) / 10; 
 
-            char *send[32] = {0};
+            char send[32] = {0};
 
-            // Select correct return string
             if (strcmp(tcp, "PWM?") == 0) {
-                send = "TODO-special";
+                snprintf(send, sizeof(send), "TODO-special");
             }else if (strcmp(tcp, "AUXPCFLOWRATE?") == 0) {
-                send = "NOT SUPPORTED";
-            else if (strcmp(tcp, "AUXPCWTEMP?") == 0) {
-                send = "NOT SUPPORTED";
+                snprintf(send, sizeof(send), "NOT SUPPORTED");
+            }else if (strcmp(tcp, "AUXPCWTEMP?") == 0) {
+                snprintf(send, sizeof(send), "NOT SUPPORTED");
             }else if (strcmp(tcp, "IDN") == 0) {
-                send = IDN;
+                snprintf(send, sizeof(send), "%s", IDN);
             }else if (strcmp(tcp, "VFDPWR?") == 0) {
-                send = "TODO-special";
+                snprintf(send, sizeof(send), "TODO-special");
             }else if (strcmp(tcp, "VFDACTPRESSURE?") == 0) {
                 snprintf(send, sizeof(send), "%.2f", pres_pv);
             }else if (strcmp(tcp, "VFDFLOWRATE?") == 0) {
-                send = "NOT SUPPORTED by HRS";
+                snprintf(send, sizeof(send), "NOT SUPPORTED by HRS");
             }else if (strcmp(tcp, "SETTEMP?") == 0) {
                 snprintf(send, sizeof(send), "%.1f", temp_sp);
             }else if (strcmp(tcp, "TEMP?") == 0) {
                 snprintf(send, sizeof(send), "%.1f", temp_pv);
             }else if (strcmp(tcp, "FLTS1A?") == 0) {
-                send = "TODO-Errors";
+                snprintf(send, sizeof(send), "TODO-Errors");
             }else {
-                send = "INVALID CMD";
+                snprintf(send, sizeof(send), "INVALID CMD");
             }
 
             if (n > 0) {
-                write(cs, send, strlen(out));
+                write(cs, send, strlen(send));
             }
         }
-        close(cs); // close TCP connection
-    } // end loop
-
+    }
     return 0;
 }
