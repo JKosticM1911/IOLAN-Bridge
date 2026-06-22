@@ -78,7 +78,7 @@ int main(void) {
 
             char *cmd = "";
 
-            char basic[] = ":01170000000C0000000000DC"; // HRS Read All command
+            char basic[] = ":01170000000C0000000000DC\r\n"; // HRS Read All command
 
             // Parse TCP Request
             if (strcmp(tcp, "PWM?") == 0) {
