@@ -72,7 +72,11 @@ int main(void) {
         while (1) {
 
             int n = read(cs, tcp, sizeof(tcp) - 1); // read TCP request
-            if (n <= 0) break;                      // disconnect or error → exit session
+
+            if (n <= 0) { // if nothing then exit
+                close(cs);
+                break;
+            }
 
             tcp[n] = 0;                             // null-terminate request string
 
@@ -104,6 +108,11 @@ int main(void) {
             }else {
                 cmd = "INVALID CMD";
             }
+
+            // manually flush serial buffer
+            char junk[256];
+            while (read(tty, junk, sizeof(junk)) > 0)
+                ;
 
             // out chiller cmd via serial
             write(tty, cmd, strlen(cmd));
@@ -160,10 +169,9 @@ int main(void) {
             }else {
                 snprintf(out, sizeof(out), "INVALID CMD");
             }
-
-            if (n > 0) {
-                write(cs, out, strlen(out));
-            }
+            
+            // send reply
+            write(cs, out, strlen(out));
         }
     }
     return 0;

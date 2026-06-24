@@ -46,7 +46,7 @@ class test {
 
         # Set Serial Port Data
         $this.DB9               = New-Object System.IO.Ports.SerialPort
-        $this.DB9.PortName      = "COM9"
+        $this.DB9.PortName      = "/dev/ttyUSB1"
         $this.DB9.BaudRate      = 9600
         $this.DB9.Parity        = [System.IO.Ports.Parity]::Even
         $this.DB9.DataBits      = 7
