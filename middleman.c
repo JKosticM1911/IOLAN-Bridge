@@ -27,7 +27,7 @@ static int wait_fd(int fd, int ms) {
 
 static double yoink_reg(const char *cmd, size_t reg){
 
-    int start = 7 + 4 * reg;
+    int start = 7 + 4 * (reg - 1);
 
     char slice[5] = {0};
 
@@ -83,7 +83,7 @@ int main(void) {
 
             char *cmd = "";
 
-            char basic[] = ":01030000000BF1\r\n"; // HRS Read All command
+            char basic[] = ":01030000000CF0\r\n"; // HRS Read All command
 
             // Parse TCP Request
             if (strcmp(tcp, "PWM?") == 0) {
@@ -116,40 +116,27 @@ int main(void) {
                 ;
 
             // out chiller cmd via serial
-            
-            // debug output of chiller input command
-            char ccmd[] =  "CMD to Chiller:\n";
-            write(cs,ccmd, strlen(ccmd));
-
             write(tty, cmd, strlen(cmd));
 
             // WAIT FOR SERIAL RESPONSE (timeout protected) --------------------
             n = 0; // reset response length
-            
+                
             if (wait_fd(tty, SERIAL_TIMEOUT_MS) > 0) { // wait for data
                 n = read(tty, ser, sizeof(ser) - 1);   // read serial response
-                if (n < 0) n = 0;                      // normalize error to empty response
+               if (n < 0) n = 0;                      // normalize error to empty response
             }
 
             ser[n] = 0; // null-terminate serial response
 
-            //debug output of chiller response
-            char cr[] = "\nChiller Response:\n";
-            write(cs, cr, strlen(cr));
-            write(cs, ser, strlen(ser));
-
             // Parse Chiller Response ------------------------------------------
-            char IDN[] = "SMC, HRSHF*, SERIAL#, Software Version 1.0";
+                
 
             // VFD power percent and kW
             //double vfd_per; // not supported by HRS
             //double vfd_kw;  // not supported by HRS
 
             // discharge pressure present value
-            char thing[] = "\nattempting to yoink temp\n";
-            write(cs, thing, strlen(thing));
-            write(cs, &ser[7], 4);
-            double pres_pv = yoink_reg(ser, 1) / 100;
+            double pres_pv = yoink_reg(ser, 3) / 100;
 
             // discharge Flow rate present value
             //double flow_pv; // not supported by HRS 
@@ -158,7 +145,10 @@ int main(void) {
             double temp_sp = yoink_reg(ser, 12) / 10;
 
             // discharge temp present value
-            double temp_pv = yoink_reg(ser, 0) / 10;
+            double temp_pv = yoink_reg(ser, 1) / 10;
+            
+            // hardcoded IDN string; needed even if serial coms doesn't happen
+            char IDN[] = "SMC, HRSHF*, SERIAL#, Software Version 1.0";
 
             if (strcmp(tcp, "PWM?") == 0) {
                 snprintf(out, sizeof(out), "TODO-special");
