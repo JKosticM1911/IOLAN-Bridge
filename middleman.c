@@ -110,11 +110,6 @@ int main(void) {
                 cmd = "INVALID CMD";
             }
 
-            // manually flush serial buffer
-            char junk[256];
-            while (read(tty, junk, sizeof(junk)) > 0)
-                ;
-
             // out chiller cmd via serial
             write(tty, cmd, strlen(cmd));
 
@@ -139,7 +134,7 @@ int main(void) {
             double pres_pv = yoink_reg(ser, 3) / 100;
 
             // discharge Flow rate present value
-            //double flow_pv; // not supported by HRS 
+            //double flow_pv; // not supported by HRS  
 
             // discharge temp set point
             double temp_sp = yoink_reg(ser, 12) / 10;

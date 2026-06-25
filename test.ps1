@@ -46,7 +46,7 @@ class test {
 
         # Set Serial Port Data
         $this.DB9               = New-Object System.IO.Ports.SerialPort
-        $this.DB9.PortName      = "/dev/ttyUSB0"
+        $this.DB9.PortName      = "/dev/ttyUSB1"
         $this.DB9.BaudRate      = 9600
         $this.DB9.Parity        = [System.IO.Ports.Parity]::Even
         $this.DB9.DataBits      = 7
@@ -178,7 +178,7 @@ class test {
         $raw_DB9_rx = $this.DB9.ReadExisting()
         Write-Host ("SIM RX: `"$raw_DB9_rx`"")
         # send serial send example serial response
-        $example = ":000000007B0086000300040005000600070008000900100011001200ED42FF"
+        $example = ":01031800DE0000000000148036000100000008000000020000012C04"
         $this.DB9.Write($example)
         Write-Host("SIM TX: `"$example`"")
         # Receive response via tcp
