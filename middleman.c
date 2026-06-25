@@ -5,6 +5,7 @@
 #include <fcntl.h>               // O_NONBLOCK and O_RDWR
 #include <stdint.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include "sdk_lib.h"             // DG1 SDK serial API
 
 #define PORT 10010               // TCP listen port
@@ -42,6 +43,7 @@ int main(void) {
     char tcp[1024];            // buffers for TCP Input data
     char ser[1024];            // buffer for Serial Output Data
     char out[1024];            // buffer for TCP reply data
+    char dev[1024];            // buffer for debug outputs
 
     // Create TCP and Serial stuff
     tty = SDK_openPort(0, O_RDWR | O_NONBLOCK);  // open serial port 
@@ -78,7 +80,7 @@ int main(void) {
                 break;
             }
 
-            tcp[n] = 0;                             // null-terminate request string
+            tcp[n] = 0; // null-terminate request string
 
             char *cmd = "";
 
@@ -115,6 +117,12 @@ int main(void) {
                 ;
 
             // out chiller cmd via serial
+            
+            // debug output of chiller input command
+            char ccmd[] =  "CMD to Chiller:";
+            write(cs,ccmd, strlen(ccmd));
+            write(cs, dev, strlen(dev));
+
             write(tty, cmd, strlen(cmd));
 
             // WAIT FOR SERIAL RESPONSE (timeout protected) --------------------
@@ -127,18 +135,26 @@ int main(void) {
 
             ser[n] = 0; // null-terminate serial response
 
+            //debug output of chiller response
+            char cr[] = "Chiller Response:";
+            write(cs, cr, strlen(cr));
+            write(cs, ser, strlen(ser));
+
             // Parse Chiller Response ------------------------------------------
             char IDN[] = "SMC, HRSHF*, SERIAL#, Software Version 1.0";
 
             // VFD power percent and kW
-            double vfd_per; // not supported by HRS
-            double vfd_kw;  // not supported by HRS
+            //double vfd_per; // not supported by HRS
+            //double vfd_kw;  // not supported by HRS
 
             // discharge pressure present value
+            char thing[] = "attempting to yoink temp";
+            write(cs, thing, strlen(thing));
+            write(cs, &ser[7], 4);
             double pres_pv = yoink_reg(ser, 1) / 100;
 
             // discharge Flow rate present value
-            double flow_pv; // not supported by HRS 
+            //double flow_pv; // not supported by HRS 
 
             // discharge temp set point
             double temp_sp = yoink_reg(ser, 12) / 10;
