@@ -43,7 +43,6 @@ int main(void) {
     char tcp[1024];            // buffers for TCP Input data
     char ser[1024];            // buffer for Serial Output Data
     char out[1024];            // buffer for TCP reply data
-    char dev[1024];            // buffer for debug outputs
 
     // Create TCP and Serial stuff
     tty = SDK_openPort(0, O_RDWR | O_NONBLOCK);  // open serial port 
@@ -119,9 +118,8 @@ int main(void) {
             // out chiller cmd via serial
             
             // debug output of chiller input command
-            char ccmd[] =  "CMD to Chiller:";
+            char ccmd[] =  "CMD to Chiller:\n";
             write(cs,ccmd, strlen(ccmd));
-            write(cs, dev, strlen(dev));
 
             write(tty, cmd, strlen(cmd));
 
@@ -136,7 +134,7 @@ int main(void) {
             ser[n] = 0; // null-terminate serial response
 
             //debug output of chiller response
-            char cr[] = "Chiller Response:";
+            char cr[] = "\nChiller Response:\n";
             write(cs, cr, strlen(cr));
             write(cs, ser, strlen(ser));
 
@@ -148,7 +146,7 @@ int main(void) {
             //double vfd_kw;  // not supported by HRS
 
             // discharge pressure present value
-            char thing[] = "attempting to yoink temp";
+            char thing[] = "\nattempting to yoink temp\n";
             write(cs, thing, strlen(thing));
             write(cs, &ser[7], 4);
             double pres_pv = yoink_reg(ser, 1) / 100;
