@@ -124,54 +124,67 @@ int main(void) {
             ser[n] = 0; // null-terminate serial response
 
             // Parse Chiller Response ------------------------------------------
-                
 
-            // VFD power percent and kW
-            //double vfd_per; // not supported by HRS
-            //double vfd_kw;  // not supported by HRS
-
-            // discharge pressure present value
-            double pres_pv = yoink_reg(ser, 3) / 100;
-
-            // discharge Flow rate present value
-            //double flow_pv; // not supported by HRS  
-
-            // discharge temp set point
-            double temp_sp = yoink_reg(ser, 12) / 10;
-
-            // discharge temp present value
-            double temp_pv = yoink_reg(ser, 1) / 10;
             
-            // hardcoded IDN string; needed even if serial coms doesn't happen
-            char IDN[] = "SMC, HRSHF*, SERIAL#, Software Version 1.0";
+            if (n > 56){ // if reply is long enough
+                
+                // VFD power percent and kW
+                //double vfd_per; // not supported by HRS (TODO)
+                //double vfd_kw;  // not supported by HRS (TODO)
 
-            if (strcmp(tcp, "PWM?") == 0) {
-                snprintf(out, sizeof(out), "TODO-special");
-            }else if (strcmp(tcp, "AUXPCFLOWRATE?") == 0) {
-                snprintf(out, sizeof(out), "NOT SUPPORTED");
-            }else if (strcmp(tcp, "AUXPCWTEMP?") == 0) {
-                snprintf(out, sizeof(out), "NOT SUPPORTED");
-            }else if (strcmp(tcp, "IDN") == 0) {
-                snprintf(out, sizeof(out), "%s", IDN);
-            }else if (strcmp(tcp, "VFDPWR?") == 0) {
-                snprintf(out, sizeof(out), "TODO-special");
-            }else if (strcmp(tcp, "VFDACTPRESSURE?") == 0) {
-                snprintf(out, sizeof(out), "%.2f", pres_pv);
-            }else if (strcmp(tcp, "VFDFLOWRATE?") == 0) {
-                snprintf(out, sizeof(out), "NOT SUPPORTED by HRS");
-            }else if (strcmp(tcp, "SETTEMP?") == 0) {
-                snprintf(out, sizeof(out), "%.1f", temp_sp);
-            }else if (strcmp(tcp, "TEMP?") == 0) {
-                snprintf(out, sizeof(out), "%.1f", temp_pv);
-            }else if (strcmp(tcp, "FLTS1A?") == 0) {
-                snprintf(out, sizeof(out), "TODO-Errors");
-            }else {
-                snprintf(out, sizeof(out), "INVALID CMD");
+                // discharge pressure present value
+                double pres_pv = yoink_reg(ser, 3) / 100;
+
+                // discharge Flow rate present value
+                //double flow_pv; // not supported by HRS  
+
+                // discharge temp set point
+                double temp_sp = yoink_reg(ser, 12) / 10;
+
+                // discharge temp present value
+                double temp_pv = yoink_reg(ser, 1) / 10;
+            
+                // hardcoded IDN string; needed even if serial coms doesn't happen
+                char IDN[] = "SMC, HRSHF*, SERIAL#, Software Version 1.0";
+
+                if (strcmp(tcp, "PWM?") == 0) {
+                    snprintf(out, sizeof(out), "TODO-special");
+                }else if (strcmp(tcp, "AUXPCFLOWRATE?") == 0) {
+                    snprintf(out, sizeof(out), "NOT SUPPORTED");
+                }else if (strcmp(tcp, "AUXPCWTEMP?") == 0) {
+                    snprintf(out, sizeof(out), "NOT SUPPORTED");
+                }else if (strcmp(tcp, "IDN") == 0) {
+                    snprintf(out, sizeof(out), "%s", IDN);
+                }else if (strcmp(tcp, "VFDPWR?") == 0) {
+                    snprintf(out, sizeof(out), "TODO-special");
+                }else if (strcmp(tcp, "VFDACTPRESSURE?") == 0) {
+                    snprintf(out, sizeof(out), "%.2f", pres_pv);
+                }else if (strcmp(tcp, "VFDFLOWRATE?") == 0) {
+                    snprintf(out, sizeof(out), "NOT SUPPORTED by HRS");
+                }else if (strcmp(tcp, "SETTEMP?") == 0) {
+                    snprintf(out, sizeof(out), "%.1f", temp_sp);
+                }else if (strcmp(tcp, "TEMP?") == 0) {
+                    snprintf(out, sizeof(out), "%.1f", temp_pv);
+                }else if (strcmp(tcp, "FLTS1A?") == 0) {
+                    snprintf(out, sizeof(out), "TODO-Errors");
+                }else {
+                    snprintf(out, sizeof(out), "INVALID CMD");
+                }
+
+                // send reply
+                write(cs, out, strlen(out));
+
+            }else{
+                char bad[] = "Reply String too short to parse";
+                write(cs, bad, strlen(bad));
             }
             
-            // send reply
-            write(cs, out, strlen(out));
+
         }
     }
+
+    char exit[] = "main has exited";
+    write(cs, exit, strlen(exit));
+
     return 0;
 }
