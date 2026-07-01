@@ -41,9 +41,9 @@ int main(void) {
     int tty, ls, cs;           // tty=serial, ls=listen socket, cs=client socket
     struct sockaddr_in6 a;     // IPv6 socket address
     socklen_t l;               // length of address struct
-    char tcp[100] = {0};       // buffers for TCP Input data
-    char ser[100] = {0};       // buffer for Serial Output Data
-    char out[100] = {0};       // buffer for TCP reply data
+    char tcp[57] = {0};        // buffers for TCP Input data
+    char ser[57] = {0};        // buffer for Serial Output Data
+    char out[57] = {0};        // buffer for TCP reply data
 
     // Create TCP and Serial stuff
     tty = SDK_openPort(0, O_RDWR | O_NONBLOCK);  // open serial port 
@@ -138,6 +138,14 @@ int main(void) {
 
             // Parse Chiller Response ------------------------------------------
 
+            double pres_pv = -1;
+            double temp_sp = -1;
+            double temp_pv = -1;
+
+                        
+            // hardcoded IDN string; needed even if serial coms doesn't happen
+            char IDN[] = "SMC, HRSHF*, SERIAL#, Software Version 1.0";
+
             
             if (n > 56){ // if reply is long enough
                 
@@ -146,19 +154,17 @@ int main(void) {
                 //double vfd_kw;  // not supported by HRS (TODO)
 
                 // discharge pressure present value
-                double pres_pv = yoink_reg(ser, 3) / 100;
+                pres_pv = yoink_reg(ser, 3) / 100;
 
                 // discharge Flow rate present value
                 //double flow_pv; // not supported by HRS  
 
                 // discharge temp set point
-                double temp_sp = yoink_reg(ser, 12) / 10;
+                temp_sp = yoink_reg(ser, 12) / 10;
 
                 // discharge temp present value
-                double temp_pv = yoink_reg(ser, 1) / 10;
-            
-                // hardcoded IDN string; needed even if serial coms doesn't happen
-                char IDN[] = "SMC, HRSHF*, SERIAL#, Software Version 1.0";
+                temp_pv = yoink_reg(ser, 1) / 10;
+
 
                 if (strcmp(tcp, "PWM?") == 0) {
                     snprintf(out, sizeof(out), "TODO-special");
@@ -188,13 +194,14 @@ int main(void) {
                 write(cs, out, strlen(out));
 
             }else{
-                char bad[] = "Reply String too short to parse or chiller sent error";
+
+                char bad[] = "Error, chiller reply: '%s'", ser;
                 write(cs, bad, strlen(bad));
             }
         }
     }
 
-    // this should never execute, it is does something went wrong
+    // this should never execute, if it is does something went wrong
     char exit[] = "main has exited";
     write(cs, exit, strlen(exit));
 
