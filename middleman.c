@@ -196,6 +196,7 @@ int main(void) {
             }else{
                 char bad[] = "Error, chiller reply: '%s'", ser;
                 write(cs, bad, strlen(bad));
+                
             }
         }
     }
