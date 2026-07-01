@@ -182,7 +182,7 @@ int main(void) {
                 write(cs, out, strlen(out));
 
             }else{
-                char bad[] = "Reply String too short to parse";
+                char bad[] = "Reply String too short to parse or chiller sent error";
                 write(cs, bad, strlen(bad));
             }
         }
