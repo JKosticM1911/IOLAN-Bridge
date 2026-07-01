@@ -69,9 +69,9 @@ class test {
 
     [void]main() {
 
-        $this.connect_tcp();
+        $good_tcp = $this.connect_tcp();
 
-        $this.connect_db9();
+        $good_db9 = $this.connect_db9();
 
         while ($true) { # Main loop
             $tx = Read-Host "TCP TX"
@@ -80,8 +80,18 @@ class test {
                 'h'       {$this.help()}
                 "clear"   {Clear-Host}
                 default {
-                    $this.send($tx)
-                    $this.recv()
+
+                    if ($good_tcp){
+                        $this.send($tx)
+                    }
+
+                    if ($good_db9){
+                        $this.sim_recv_send()
+                    }
+
+                    if ($good_tcp) {
+                        $this.recv_tcp()
+                    }
                 }
             }
         }
@@ -103,29 +113,31 @@ class test {
         Write-Host "FLTS1A?             Read alarm flags 1-2`n"
     }
 
-    [void]connect_tcp() {
+    [int]connect_tcp() {
         try { # try to connect via TCP
             Write-Host "Connecting TCP->IOLAN: " -NoNewline
             $this.TCP.Connect($this.TCPEND) # open the serial port
             Write-Host "Connected" -ForegroundColor Green
-
+            return 1
         }catch{ # if failed show error and exit
             Write-Host ("FAILED") -ForegroundColor Red
             Write-Host "Exception: $($_.Exception.Message)" -ForegroundColor Red
+            return 0
         }
     }
 
-    [void]connect_db9() {
+    [int]connect_db9() {
         while ($true) {
             try { # try to connect via DB9 with hardcoded vals
                 Write-Host "Connecting IOLAN->SIM: " -NoNewline
                 $this.DB9.Open()
                 Write-Host "Connected" -ForegroundColor Green
-                return
+                return 1
             }catch{
                 # show failed port name
                 $port = $this.DB9.PortName
                 Write-Host ("FAILED using $port`n") -ForegroundColor Red
+                return 0
             }
 
             # show valid port options
@@ -167,7 +179,7 @@ class test {
         }
     }
 
-    [void]send($tx) {
+    [void]send_tcp($tx) {
         $this.DB9.DiscardInBuffer()
         $this.DB9.DiscardOutBuffer() 
 
@@ -178,7 +190,7 @@ class test {
         Start-Sleep -Milliseconds 50
     }
 
-    [void]recv() {
+    [void]sim_recv_send() {
         # receive data via serial
         $raw_DB9_rx = $this.DB9.ReadExisting()
         Write-Host ("SIM RX: `"$raw_DB9_rx`"")
@@ -187,7 +199,9 @@ class test {
         $example = ":01031800DE0000000000148036000100000008000000020000012C04"
         $this.DB9.Write($example)
         Write-Host("SIM TX: `"$example`"")
+    }
 
+    [void]recv_tcp() {
         # Receive response via tcp
         if ($this.TCP.Poll(1000000, [System.Net.Sockets.SelectMode]::SelectRead)) {
             # atempt to read count chars from TCP into buffer
