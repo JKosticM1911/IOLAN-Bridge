@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include "sdk_lib.h"             // DG1 SDK serial API
 
+
 #define PORT 10010               // TCP listen port
 #define SERIAL_TIMEOUT_MS 1000   // max wait for serial response
 
@@ -40,9 +41,9 @@ int main(void) {
     int tty, ls, cs;           // tty=serial, ls=listen socket, cs=client socket
     struct sockaddr_in6 a;     // IPv6 socket address
     socklen_t l;               // length of address struct
-    char tcp[1024];            // buffers for TCP Input data
-    char ser[1024];            // buffer for Serial Output Data
-    char out[1024];            // buffer for TCP reply data
+    char tcp[1024] = {0};      // buffers for TCP Input data
+    char ser[1024] = {0};      // buffer for Serial Output Data
+    char out[1024] = {0};      // buffer for TCP reply data
 
     // Create TCP and Serial stuff
     tty = SDK_openPort(0, O_RDWR | O_NONBLOCK);  // open serial port 
@@ -178,8 +179,6 @@ int main(void) {
                 char bad[] = "Reply String too short to parse";
                 write(cs, bad, strlen(bad));
             }
-            
-
         }
     }
 
