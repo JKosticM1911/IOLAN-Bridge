@@ -124,6 +124,7 @@ int main(void) {
                 }
 
                 write(tty, cmd, strlen(cmd));
+                usleep(50000);
             }
 
             // WAIT FOR SERIAL RESPONSE (timeout protected) --------------------
