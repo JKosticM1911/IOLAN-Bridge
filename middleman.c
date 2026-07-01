@@ -194,8 +194,6 @@ int main(void) {
                 write(cs, out, strlen(out));
 
             }else{
-                char bad[] = "Error, chiller reply:";
-                write(cs, bad, strlen(bad));
                 write(cs, ser, strlen(ser));
             }
         }
