@@ -46,7 +46,7 @@ class test {
 
         # Set Serial Port Data
         $this.DB9               = New-Object System.IO.Ports.SerialPort
-        $this.DB9.PortName      = "/dev/ttyUSB1"
+        $this.DB9.PortName      = "/dev/ttyUSB0"
         $this.DB9.BaudRate      = 9600
         $this.DB9.Parity        = [System.IO.Ports.Parity]::Even
         $this.DB9.DataBits      = 7
@@ -79,7 +79,10 @@ class test {
                 "exit"   {return}
                 'h'       {$this.help()}
                 "clear"   {Clear-Host}
-                default {$this.send_recv($tx)}
+                default {
+                    $this.send($tx)
+                    $this.recv()
+                }
             }
         }
     }
@@ -131,10 +134,10 @@ class test {
 
             # menu prompt
             $input = Read-Host "Enter COM port, 'exit', or 'idk' to use unplug and plug detection"
-            if ($input -eq "exit") { # exit if needed 
+            if ($input -eq "exit") { # exit if needed char
                 return
             }if ($input -ne "idk") {
-                # check coms and make sure input is a valid com
+                # check coms and make sure input is a valid comchar
                 if ($validPorts -contains $input) {
                     Write-Host "COM Port is Valid: $input" -ForegroundColor Green
 
@@ -164,8 +167,7 @@ class test {
         }
     }
 
-    [void]send_recv($tx) {
-
+    [void]send($tx) {
         $this.DB9.DiscardInBuffer()
         $this.DB9.DiscardOutBuffer() 
 
@@ -174,13 +176,18 @@ class test {
         [void]$this.TCP.Send($bytes)
         # wait 50 ms before receiving message
         Start-Sleep -Milliseconds 50
+    }
+
+    [void]recv() {
         # receive data via serial
         $raw_DB9_rx = $this.DB9.ReadExisting()
         Write-Host ("SIM RX: `"$raw_DB9_rx`"")
+
         # send serial send example serial response
         $example = ":01031800DE0000000000148036000100000008000000020000012C04"
         $this.DB9.Write($example)
         Write-Host("SIM TX: `"$example`"")
+
         # Receive response via tcp
         if ($this.TCP.Poll(1000000, [System.Net.Sockets.SelectMode]::SelectRead)) {
             # atempt to read count chars from TCP into buffer
@@ -194,10 +201,42 @@ class test {
             Write-Host "(No response) `n"
         }
         [Array]::Clear($this.rxbuff, 0, $this.rxbuff.Length)
-
     }
 
-} # END  TEST ==================================================================
+    [void]send_recv($tx) {
+        $this.DB9.DiscardInBuffer()
+        $this.DB9.DiscardOutBuffer() 
+
+        # Send ASCII text
+        $bytes = [System.Text.Encoding]::ASCII.GetBytes($tx)
+        [void]$this.TCP.Send($bytes)
+        # wait 50 ms before receiving message
+        Start-Sleep -Milliseconds 50
+        # receive data via serial
+        $raw_DB9_rx = $this.DB9.ReadExisting()
+        Write-Host ("SIM RX: `"$raw_DB9_rx`"")
+
+        # send serial send example serial response
+        $example = ":01031800DE0000000000148036000100000008000000020000012C04"
+        $this.DB9.Write($example)
+        Write-Host("SIM TX: `"$example`"")
+
+        # Receive response via tcp
+        if ($this.TCP.Poll(1000000, [System.Net.Sockets.SelectMode]::SelectRead)) {
+            # atempt to read count chars from TCP into buffer
+            $count = $this.TCP.Receive($this.rxbuff)
+            
+            if ($count -gt 0) {
+                $raw_tcp_rx = [System.Text.Encoding]::ASCII.GetString($this.rxbuff,0,$count)
+                Write-Host "TCP RX: `"$raw_tcp_rx`"`n"
+            }
+        } else {
+            Write-Host "(No response) `n"
+        }
+        [Array]::Clear($this.rxbuff, 0, $this.rxbuff.Length)
+    }
+
+} # END  TEST CLASS  ===========================================================
 
 # Main things ==================================================================
 

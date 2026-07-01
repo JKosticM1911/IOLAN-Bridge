@@ -41,9 +41,9 @@ int main(void) {
     int tty, ls, cs;           // tty=serial, ls=listen socket, cs=client socket
     struct sockaddr_in6 a;     // IPv6 socket address
     socklen_t l;               // length of address struct
-    char tcp[1024] = {0};      // buffers for TCP Input data
-    char ser[1024] = {0};      // buffer for Serial Output Data
-    char out[1024] = {0};      // buffer for TCP reply data
+    char tcp[100] = {0};       // buffers for TCP Input data
+    char ser[100] = {0};       // buffer for Serial Output Data
+    char out[100] = {0};       // buffer for TCP reply data
 
     // Create TCP and Serial stuff
     tty = SDK_openPort(0, O_RDWR | O_NONBLOCK);  // open serial port 
@@ -72,6 +72,10 @@ int main(void) {
 
         // Command loop
         while (1) {
+
+            memset(tcp, 0, sizeof(tcp));
+            memset(ser, 0, sizeof(ser));
+            memset(out, 0, sizeof(out));
 
             int n = read(cs, tcp, sizeof(tcp) - 1); // read TCP request
 
@@ -112,7 +116,9 @@ int main(void) {
             }
 
             // out chiller cmd via serial
-            write(tty, cmd, strlen(cmd));
+            if (cmd[0] == ':') { // make sure it's a valid chiller cmd
+                write(tty, cmd, strlen(cmd));
+            }
 
             // WAIT FOR SERIAL RESPONSE (timeout protected) --------------------
             n = 0; // reset response length
@@ -182,6 +188,7 @@ int main(void) {
         }
     }
 
+    // this should never execute, it is does something went wrong
     char exit[] = "main has exited";
     write(cs, exit, strlen(exit));
 
