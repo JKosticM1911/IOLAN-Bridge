@@ -81,15 +81,15 @@ class test {
                 "clear"   {Clear-Host}
                 default {
 
-                    if ($good_tcp){
-                        $this.send($tx)
+                    if ($good_tcp -gt 0){
+                        $this.send_tcp($tx)
                     }
 
-                    if ($good_db9){
+                    if ($good_db9 -gt 0){
                         $this.sim_recv_send()
                     }
 
-                    if ($good_tcp) {
+                    if ($good_tcp -gt 0) {
                         $this.recv_tcp()
                     }
                 }
@@ -114,16 +114,25 @@ class test {
     }
 
     [int]connect_tcp() {
-        try { # try to connect via TCP
-            Write-Host "Connecting TCP->IOLAN: " -NoNewline
-            $this.TCP.Connect($this.TCPEND) # open the serial port
-            Write-Host "Connected" -ForegroundColor Green
-            return 1
-        }catch{ # if failed show error and exit
-            Write-Host ("FAILED") -ForegroundColor Red
-            Write-Host "Exception: $($_.Exception.Message)" -ForegroundColor Red
-            return 0
+        while ($true) {
+            try { # try to connect via TCP
+                Write-Host "Connecting TCP->IOLAN: " -NoNewline
+                $this.TCP.Connect($this.TCPEND) # open the serial port
+                Write-Host "Connected" -ForegroundColor Green
+                return 1
+            }catch{ # if failed show error and exit
+                Write-Host ("FAILED") -ForegroundColor Red
+                Write-Host "Exception: $($_.Exception.Message)" -ForegroundColor Red
+            }
+
+            $input = Read-Host "TCP connection needed: type 'exit' or enter to try again"
+            if ($input -eq "exit") { # exit if needed char
+                return -1
+            else 
+                continue
+            }
         }
+        return -1
     }
 
     [int]connect_db9() {
@@ -137,7 +146,6 @@ class test {
                 # show failed port name
                 $port = $this.DB9.PortName
                 Write-Host ("FAILED using $port`n") -ForegroundColor Red
-                return 0
             }
 
             # show valid port options
@@ -147,7 +155,7 @@ class test {
             # menu prompt
             $input = Read-Host "Enter COM port, 'exit', or 'idk' to use unplug and plug detection"
             if ($input -eq "exit") { # exit if needed char
-                return
+                return -1
             }if ($input -ne "idk") {
                 # check coms and make sure input is a valid comchar
                 if ($validPorts -contains $input) {
@@ -177,20 +185,23 @@ class test {
             $this.DB9.Close() # close port if open
             $this.DB9.PortName = $COM
         }
+        return -1
     }
 
     [void]send_tcp($tx) {
-        $this.DB9.DiscardInBuffer()
-        $this.DB9.DiscardOutBuffer() 
-
         # Send ASCII text
         $bytes = [System.Text.Encoding]::ASCII.GetBytes($tx)
         [void]$this.TCP.Send($bytes)
-        # wait 50 ms before receiving message
-        Start-Sleep -Milliseconds 50
     }
 
     [void]sim_recv_send() {
+        # flush serial buffer
+        $this.DB9.DiscardInBuffer()
+        $this.DB9.DiscardOutBuffer()
+
+        # wait 50 ms before receiving message
+        Start-Sleep -Milliseconds 50
+
         # receive data via serial
         $raw_DB9_rx = $this.DB9.ReadExisting()
         Write-Host ("SIM RX: `"$raw_DB9_rx`"")
