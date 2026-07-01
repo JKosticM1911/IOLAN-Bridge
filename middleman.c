@@ -144,7 +144,7 @@ int main(void) {
 
                         
             // hardcoded IDN string; needed even if serial coms doesn't happen
-            char IDN[] = "SMC, HRSHF*, SERIAL#, Software Version 1.0";
+            char IDN[] = "SMC, HRSHF*, SERIAL#, Software Version 1.1";
 
             
             if (n > 56){ // if reply is long enough
@@ -196,7 +196,6 @@ int main(void) {
             }else{
                 char bad[] = "Error, chiller reply: '%s'", ser;
                 write(cs, bad, strlen(bad));
-                
             }
         }
     }
