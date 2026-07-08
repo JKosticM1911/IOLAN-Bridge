@@ -9,8 +9,8 @@
 #include "sdk_lib.h"             // DG1 SDK serial API
 
 
-#define PORT 10010               // TCP listen port
-#define SERIAL_TIMEOUT_MS 200000 // max wait for serial response
+#define PORT 10010                 // TCP listen port
+#define SERIAL_TIMEOUT_MS 200000   // max wait for serial response
 
 // Helper: wait until fd becomes readable or timeout expires -------------------
 static int wait_fd(int fd, int ms) {
@@ -20,7 +20,7 @@ static int wait_fd(int fd, int ms) {
     FD_ZERO(&fds);     // clear set
     FD_SET(fd, &fds);  // add fd to monitor
 
-    tv.tv_sec  = ms / 1000;          // milliseconds part of timeout
+    tv.tv_sec  = ms / 1000;          // seconds part of timeout
     tv.tv_usec = (ms % 1000) * 1000; // microseconds part
 
     return select(fd + 1, &fds, NULL, NULL, &tv); // wait for readability
@@ -117,6 +117,12 @@ int main(void) {
 
             // out chiller cmd via serial
             if (cmd[0] == ':') { // make sure it's a valid chiller cmd
+
+                char flush[256]; // flush buffer of any stray bytes
+                while (read(tty, flush, sizeof(flush)) > 0){
+                    ;
+                }
+
                 write(tty, cmd, strlen(cmd));
             }
 
@@ -125,7 +131,7 @@ int main(void) {
                 
             if (wait_fd(tty, SERIAL_TIMEOUT_MS) > 0) { // wait for data
                 n = read(tty, ser, sizeof(ser) - 1);   // read serial response
-               if (n < 0) n = 0;                      // normalize error to empty response
+               if (n < 0) n = 0;                       // normalize error to empty response
             }
 
             ser[n] = 0; // null-terminate serial response
