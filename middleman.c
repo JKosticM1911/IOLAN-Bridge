@@ -10,7 +10,7 @@
 
 
 #define PORT 10010               // TCP listen port
-#define SERIAL_TIMEOUT_MS 1000   // max wait for serial response
+#define SERIAL_TIMEOUT_MS 15000   // max wait for serial response
 
 // Helper: wait until fd becomes readable or timeout expires -------------------
 static int wait_fd(int fd, int ms) {
@@ -20,7 +20,7 @@ static int wait_fd(int fd, int ms) {
     FD_ZERO(&fds);     // clear set
     FD_SET(fd, &fds);  // add fd to monitor
 
-    tv.tv_sec  = ms / 1000;          // seconds part of timeout
+    tv.tv_sec  = ms / 1000;          // milliseconds part of timeout
     tv.tv_usec = (ms % 1000) * 1000; // microseconds part
 
     return select(fd + 1, &fds, NULL, NULL, &tv); // wait for readability
@@ -118,7 +118,6 @@ int main(void) {
             // out chiller cmd via serial
             if (cmd[0] == ':') { // make sure it's a valid chiller cmd
                 write(tty, cmd, strlen(cmd));
-                usleep(15000); // sleep for 200 to make sure chiller has time to respond;
             }
 
             // WAIT FOR SERIAL RESPONSE (timeout protected) --------------------
