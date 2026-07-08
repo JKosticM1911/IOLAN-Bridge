@@ -117,14 +117,8 @@ int main(void) {
 
             // out chiller cmd via serial
             if (cmd[0] == ':') { // make sure it's a valid chiller cmd
-
-                char flush[256]; // flush buffer of any stray bytes
-                while (read(tty, flush, sizeof(flush)) > 0){
-                    ;
-                }
-
                 write(tty, cmd, strlen(cmd));
-                usleep(200000);
+                usleep(15000); // sleep for 200 to make sure chiller has time to respond;
             }
 
             // WAIT FOR SERIAL RESPONSE (timeout protected) --------------------
