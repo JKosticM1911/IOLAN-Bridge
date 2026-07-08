@@ -10,7 +10,7 @@
 
 
 #define PORT 10010               // TCP listen port
-#define SERIAL_TIMEOUT_MS 15000   // max wait for serial response
+#define SERIAL_TIMEOUT_MS 200000 // max wait for serial response
 
 // Helper: wait until fd becomes readable or timeout expires -------------------
 static int wait_fd(int fd, int ms) {
