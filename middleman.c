@@ -122,7 +122,7 @@ int main(void) {
                 while (read(tty, flush, sizeof(flush)) > 0){
                     ;
                 }
-
+                usleep(15000);
                 write(tty, cmd, strlen(cmd));
             }
 
