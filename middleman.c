@@ -41,9 +41,9 @@ int main(void) {
     int tty, ls, cs;           // tty=serial, ls=listen socket, cs=client socket
     struct sockaddr_in6 a;     // IPv6 socket address
     socklen_t l;               // length of address struct
-    char tcp[57] = {0};        // buffers for TCP Input data
-    char ser[57] = {0};        // buffer for Serial Output Data
-    char out[57] = {0};        // buffer for TCP reply data
+    char tcp[58] = {0};        // buffers for TCP Input data
+    char ser[58] = {0};        // buffer for Serial Output Data
+    char out[58] = {0};        // buffer for TCP reply data
 
     // Create TCP and Serial stuff
     tty = SDK_openPort(0, O_RDWR | O_NONBLOCK);  // open serial port 
@@ -124,7 +124,7 @@ int main(void) {
                 }
 
                 write(tty, cmd, strlen(cmd));
-                usleep(50000);
+                usleep(200000);
             }
 
             // WAIT FOR SERIAL RESPONSE (timeout protected) --------------------
