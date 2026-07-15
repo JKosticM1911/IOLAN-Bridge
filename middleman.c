@@ -8,7 +8,6 @@
 #include <stdio.h>
 #include "sdk_lib.h"             // DG1 SDK serial API
 
-
 #define PORT 10010                 // TCP listen port
 #define SERIAL_TIMEOUT_MS 15000   // max wait for serial response
 
