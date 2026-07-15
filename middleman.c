@@ -8,8 +8,9 @@
 #include <stdio.h>
 #include "sdk_lib.h"             // DG1 SDK serial API
 
-#define PORT 10010                 // TCP listen port
-#define SERIAL_TIMEOUT_MS 15000   // max wait for serial response
+
+#define PORT 10010               // TCP listen port
+#define SERIAL_TIMEOUT_MS 1000   // max wait for serial response
 
 // Helper: wait until fd becomes readable or timeout expires -------------------
 static int wait_fd(int fd, int ms) {
@@ -40,29 +41,28 @@ int main(void) {
     int tty, ls, cs;           // tty=serial, ls=listen socket, cs=client socket
     struct sockaddr_in6 a;     // IPv6 socket address
     socklen_t l;               // length of address struct
-    char tcp[60] = {0};        // buffers for TCP Input data
-    char ser[60] = {0};        // buffer for Serial Output Data
-    char out[60] = {0};        // buffer for TCP reply data
+    char tcp[58] = {0};        // buffers for TCP Input data
+    char ser[58] = {0};        // buffer for Serial Output Data
+    char out[58] = {0};        // buffer for TCP reply data
+
+    // Create TCP and Serial stuff
+    tty = SDK_openPort(0, O_RDWR | O_NONBLOCK);  // open serial port 
+    SDK_initPort(0, tty, NULL);                  // Use DG1 Settings
+    ls = socket(AF_INET6, SOCK_STREAM, 0);       // create IPv6 TCP socket
+
+    // socket options
+    int on = 1; // socket option enable flag
+    setsockopt(ls, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)); // allow fast restart
+
+    a.sin6_family = AF_INET6;  // IPv6 socket family
+    a.sin6_addr = in6addr_any; // bind to all interfaces
+    a.sin6_port = htons(PORT); // convert port to network byte order
+
+    bind(ls, (struct sockaddr*)&a, sizeof(a)); // attach socket to port
+    listen(ls, 1); // start listening (single queued client)
 
     // Server Loop
     while (1) {
-
-        // Create TCP and Serial stuff
-        tty = SDK_openPort(0, O_RDWR | O_NONBLOCK);  // open serial port 
-        SDK_initPort(0, tty, NULL);                  // Use DG1 Settings
-        ls = socket(AF_INET6, SOCK_STREAM, 0);       // create IPv6 TCP socket
-
-        // socket options
-        int on = 1; // socket option enable flag
-        setsockopt(ls, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)); // allow fast restart
-
-        a.sin6_family = AF_INET6;  // IPv6 socket family
-        a.sin6_addr = in6addr_any; // bind to all interfaces
-        a.sin6_port = htons(PORT); // convert port to network byte order
-
-        bind(ls, (struct sockaddr*)&a, sizeof(a)); // attach socket to port
-        listen(ls, 1); // start listening (single queued client)
-
         l = sizeof(a);                             // reset address length
         cs = accept(ls, (struct sockaddr*)&a, &l); // wait for incoming client
 
@@ -122,8 +122,9 @@ int main(void) {
                 while (read(tty, flush, sizeof(flush)) > 0){
                     ;
                 }
-                usleep(15000);
+
                 write(tty, cmd, strlen(cmd));
+                usleep(200000);
             }
 
             // WAIT FOR SERIAL RESPONSE (timeout protected) --------------------
@@ -131,7 +132,7 @@ int main(void) {
                 
             if (wait_fd(tty, SERIAL_TIMEOUT_MS) > 0) { // wait for data
                 n = read(tty, ser, sizeof(ser) - 1);   // read serial response
-               if (n < 0) n = 0;                       // normalize error to empty response
+               if (n < 0) n = 0;                      // normalize error to empty response
             }
 
             ser[n] = 0; // null-terminate serial response
