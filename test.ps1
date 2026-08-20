@@ -37,11 +37,12 @@ class test {
 
         # Set TCP Endpoint Data
         # Parse IPv6 WITHOUT interface name
-        $ip = [System.Net.IPAddress]::Parse("fe80::280:d4ff:fe32:80a8%2")
+        #$ip = [System.Net.IPAddress]::Parse("fe80::280:d4ff:fe32:80a8%2")
+        $ip = [System.Net.IPAddress]::Parse("192.168.0.42")
 
         $this.TCPEND = [System.Net.IPEndPoint]::new(
             $ip,                # 
-            10010               # port used
+            10001               # port used
         )
 
         # Set Serial Port Data
@@ -110,7 +111,9 @@ class test {
         Write-Host "VFDACTPRESSURE?     Set the chiller slave address"
         Write-Host "SETTEMP?            Read the set discharge temp"
         Write-Host "TEMP?               Read the present discharge temp"
-        Write-Host "FLTS1A?             Read alarm flags 1-2`n"
+        Write-Host "FLTS1A?             Read alarm flags 1-2"
+        Write-Host "AUXPCWTEMP?         NOT SUPPORTED"
+        Write-Host "VFDFLOWRATE?        NOT SUPPORTED`n"
     }
 
     [int]connect_tcp() {
