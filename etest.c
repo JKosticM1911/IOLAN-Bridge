@@ -1,6 +1,6 @@
 #include <unistd.h>              // read(), write(), close()
 #include <string.h>              // strlen()
-#include <arpa/inet.h>           // IPv6 socket structs
+#include <arpa/inet.h>           // IPv4 socket structs
 #include <sys/select.h>          // select()
 #include <fcntl.h>               // O_NONBLOCK and O_RDWR
 #include <stdint.h>
@@ -12,22 +12,25 @@
 
 int main(void) {
     int tty, ls, cs;           // tty=serial, ls=listen socket, cs=client socket
-    struct sockaddr_in6 a;     // IPv6 socket address
+    struct sockaddr_in a;      // IPv4 socket address
+    memset(&a, 0, sizeof(a));  // clear struct in case it had garbage
+
     socklen_t l;               // length of address struct
     char tcp[58] = {0};        // buffers for TCP Input data
 
     // Create TCP and Serial stuff
-    tty = SDK_openPort(0, O_RDWR | O_NONBLOCK);  // open serial port 
+    tty = SDK_openPort(0, O_RDWR | O_NONBLOCK);  // open serial port
     SDK_initPort(0, tty, NULL);                  // Use DG1 Settings
-    ls = socket(AF_INET6, SOCK_STREAM, 0);       // create IPv6 TCP socket
+
+    ls = socket(AF_INET, SOCK_STREAM, 0);       // create IPv4 TCP socket
 
     // socket options
     int on = 1; // socket option enable flag
     setsockopt(ls, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)); // allow fast restart
 
-    a.sin6_family = AF_INET6;  // IPv6 socket family
-    a.sin6_addr = in6addr_any; // bind to all interfaces
-    a.sin6_port = htons(PORT); // convert port to network byte order
+    a.sin_family = AF_INET;         // IPv4 socket family
+    a.sin_port = htonl(PORT);       // bind to all interfaces
+    a.sin_addr.s_addr = INADDR_ANY; // convert port to network byte order
 
     bind(ls, (struct sockaddr*)&a, sizeof(a)); // attach socket to port
     listen(ls, 1); // start listening (single queued client)

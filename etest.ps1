@@ -27,7 +27,7 @@ class test {
     test() {
         # Set TCP Socket Data
         $this.TCP = [System.Net.Sockets.Socket]::new(
-            [System.Net.Sockets.AddressFamily]::InterNetworkV6,
+            [System.Net.Sockets.AddressFamily]::InterNetwork,
             [System.Net.Sockets.SocketType]::Stream,
             [System.Net.Sockets.ProtocolType]::Tcp
         )
@@ -35,7 +35,7 @@ class test {
         # Set TCP Endpoint Data
         # Parse IPv6 WITHOUT interface name
         #$ip = [System.Net.IPAddress]::Parse("fe80::280:d4ff:fe32:80a8%2")
-        $ip = [System.Net.IPAddress]::Parse("192.168.0.42")
+        $ip = [System.Net.IPAddress]::Parse("192.168.168.35")
 
         $this.TCPEND = [System.Net.IPEndPoint]::new(
             $ip,                # 
