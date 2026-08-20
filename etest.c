@@ -29,7 +29,7 @@ int main(void) {
     setsockopt(ls, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)); // allow fast restart
 
     a.sin_family = AF_INET;         // IPv4 socket family
-    a.sin_port = htonl(PORT);       // bind to all interfaces
+    a.sin_port = htons(PORT);       // bind to all interfaces
     a.sin_addr.s_addr = INADDR_ANY; // convert port to network byte order
 
     bind(ls, (struct sockaddr*)&a, sizeof(a)); // attach socket to port
