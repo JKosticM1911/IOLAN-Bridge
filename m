@@ -15,12 +15,15 @@ LD_CCFLAGS = $(SDK_LD_CCFLAGS)
 # shared library flags (assumes gcc)
 DLFLAGS= -fPIC -shared
 
-all: middleman
+all: middleman etest
+
+etest: etest.o 
+	$(CC) -W -Wall $(CFLAGS) $(LD_CCFLAGS) $(LIBS) -o etest etest.o
+	$(STRIP) etest
 
 middleman: middleman.o
 	$(CC) -W -Wall $(CFLAGS) $(LD_CCFLAGS) $(LIBS) -o middleman middleman.o
 	$(STRIP) middleman
 
 clean:
-	-rm -f *.o io middleman makefile.depend
-
+	-rm -f *.o io middleman makefile.depend etest etest.o
