@@ -124,6 +124,7 @@ class test {
     [void]send_tcp($tx) {
         # Send ASCII text
         $bytes = [System.Text.Encoding]::ASCII.GetBytes($tx)
+        $bytes = $bytes + "`r"
         [void]$this.TCP.Send($bytes)
     }
 

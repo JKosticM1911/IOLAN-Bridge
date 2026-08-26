@@ -16,7 +16,7 @@ int main(void) {
     memset(&a, 0, sizeof(a));  // clear struct in case it had garbage
 
     socklen_t l;               // length of address struct
-    char tcp[58] = {0};        // buffers for TCP Input data
+    char tcp[58] = {0};        // buffer for TCP Input data
 
     // Create TCP and Serial stuff
     tty = SDK_openPort(0, O_RDWR | O_NONBLOCK);  // open serial port
@@ -28,9 +28,9 @@ int main(void) {
     int on = 1; // socket option enable flag
     setsockopt(ls, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)); // allow fast restart
 
-    a.sin_family = AF_INET;         // IPv4 socket family
-    a.sin_port = htons(PORT);       // bind to all interfaces
-    a.sin_addr.s_addr = INADDR_ANY; // convert port to network byte order
+    a.sin_family = AF_INET;
+    a.sin_port = htons(PORT);
+    a.sin_addr.s_addr = INADDR_ANY;
 
     bind(ls, (struct sockaddr*)&a, sizeof(a)); // attach socket to port
     listen(ls, 1); // start listening (single queued client)
@@ -66,39 +66,39 @@ int main(void) {
             if (strcmp(tcp, "PWM?") == 0) { // format (+/- XX.X)
                 response = "0";
 
-            }else if (strcmp(tcp, "VFDACTPRESSURE?") == 0) { 
+            }else if (strcmp(tcp, "VFDACTPRESSURE?\r") == 0) { 
                 // format (XXX)
                 response = "40";
 
-            }else if (strcmp(tcp, "VFDPWR?") == 0) { 
+            }else if (strcmp(tcp, "VFDPWR?\r") == 0) { 
                 // format (X.XXX)
                 response = "100";
 
-            }else if (strcmp(tcp, "FLTS1A?") == 0) { 
+            }else if (strcmp(tcp, "FLTS1A?\r") == 0) { 
                 // format (0-65535)
                 response = "0";
 
-            }else if (strcmp(tcp, "TEMP?") == 0) { 
+            }else if (strcmp(tcp, "TEMP?\r") == 0) { 
                 // format (+/- XXX.X)
                 response = "16";
 
-            }else if (strcmp(tcp, "IDN") == 0) {
+            }else if (strcmp(tcp, "IDN\r") == 0) {
                 // format string
                 response = "HRSHF-250";
 
-            }else if (strcmp(tcp, "SETTEMP?") == 0) {
+            }else if (strcmp(tcp, "SETTEMP?\r") == 0) {
                 // format (XXX.X))
                 response = "16";
 
-            }else if (strcmp(tcp, "AUXPCWFLOWRATE?") == 0) {
+            }else if (strcmp(tcp, "AUXPCWFLOWRATE?\r") == 0) {
                 // format (XX.X)
                 response = "10";
 
-            }else if (strcmp(tcp, "AUXPCWTEMP?") == 0) {
+            }else if (strcmp(tcp, "AUXPCWTEMP?\r") == 0) {
                 // format (XX.X)
                 response = "20";
 
-            }else if (strcmp(tcp, "VFDFLOWRATE?") == 0) {
+            }else if (strcmp(tcp, "VFDFLOWRATE?\r") == 0) {
                 // format (XX.X)
                 response = "10";
 
