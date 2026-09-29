@@ -21,7 +21,7 @@ class test {
 
     # TCP EndPoint Object
     [System.Net.IPEndPoint]$TCPEND
-
+ 
     #buffers
     $rxbuff
     $txbuff
