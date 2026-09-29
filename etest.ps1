@@ -33,8 +33,6 @@ class test {
         )
 
         # Set TCP Endpoint Data
-        # Parse IPv6 WITHOUT interface name
-        #$ip = [System.Net.IPAddress]::Parse("fe80::280:d4ff:fe32:80a8%2")
         $ip = [System.Net.IPAddress]::Parse("192.168.168.35")
 
         $this.TCPEND = [System.Net.IPEndPoint]::new(
@@ -88,7 +86,7 @@ class test {
 
         Write-Host "Chiller Commands:"
         Write-Host "PWM?                Read current load in percent of maximum cooling capacity (25kW) based on compressor usage"
-        Write-Host "AUXPCFLOWRATE?      Read current measured discharge flow rate in GPM"
+        Write-Host "AUXPCWFLOWRATE?     Read current measured discharge flow rate in GPM"
         Write-Host "IDN                 Read chiller model"
         Write-Host "VFDPWR?             Read current load in kw based on relative percent usage of maximum compressor usage (25kW)"
         Write-Host "VFDACTPRESSURE?     Read current measured discharge pressure in PSI"

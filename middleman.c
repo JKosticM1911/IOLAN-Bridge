@@ -39,24 +39,25 @@ static double yoink_reg(const char *cmd, size_t reg){
 
 int main(void) {
     int tty, ls, cs;           // tty=serial, ls=listen socket, cs=client socket
-    struct sockaddr_in6 a;     // IPv6 socket address
+    struct sockaddr_in a;      // IPv4 socket address
     socklen_t l;               // length of address struct
     char tcp[58] = {0};        // buffers for TCP Input data
     char ser[58] = {0};        // buffer for Serial Output Data
     char out[58] = {0};        // buffer for TCP reply data
 
     // Create TCP and Serial stuff
-    tty = SDK_openPort(0, O_RDWR | O_NONBLOCK);  // open serial port 
+    tty = SDK_openPort(0, O_RDWR | O_NONBLOCK);  // open serial port
     SDK_initPort(0, tty, NULL);                  // Use DG1 Settings
-    ls = socket(AF_INET6, SOCK_STREAM, 0);       // create IPv6 TCP socket
+
+    ls = socket(AF_INET, SOCK_STREAM, 0);       // create IPv4 TCP socket
 
     // socket options
     int on = 1; // socket option enable flag
     setsockopt(ls, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)); // allow fast restart
 
-    a.sin6_family = AF_INET6;  // IPv6 socket family
-    a.sin6_addr = in6addr_any; // bind to all interfaces
-    a.sin6_port = htons(PORT); // convert port to network byte order
+    a.sin_family = AF_INET;
+    a.sin_port = htons(PORT);
+    a.sin_addr.s_addr = INADDR_ANY;
 
     bind(ls, (struct sockaddr*)&a, sizeof(a)); // attach socket to port
     listen(ls, 1); // start listening (single queued client)
@@ -86,7 +87,7 @@ int main(void) {
 
             tcp[n] = 0; // null-terminate request string
 
-            char *cmd = "";
+            char *cmd;
 
             char basic[] = ":01030000000CF0\r\n"; // HRS Read All command
 
