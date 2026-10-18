@@ -10,7 +10,7 @@
 
 
 #define PORT 10001               // TCP listen port
-#define SERIAL_TIMEOUT_MS 1000   // max wait for serial response
+#define SERIAL_TIMEOUT_MS 200    // max wait for serial response
 
 // Helper: wait until fd becomes readable or timeout expires -------------------
 static int wait_fd(int fd, int ms) {
@@ -38,13 +38,13 @@ static double yoink_reg(const char *cmd, size_t reg){
 }
 
 int main(void) {
-    int tty, ls, cs;           // tty=serial, ls=listen socket, cs=client socket
-    struct sockaddr_in a;      // IPv4 socket address
+    int tty, ls, cs;            // tty=serial, ls=listen socket, cs=client socket
+    struct sockaddr_in a;       // IPv4 socket address
     
-    socklen_t l;               // length of address struct
-    char tcp[58] = {0};        // buffers for TCP Input data
-    char ser[58] = {0};        // buffer for Serial Output Data
-    char out[58] = {0};        // buffer for TCP reply data
+    socklen_t l;                // length of address struct
+    char tcp[128] = {0};        // buffers for TCP Input data
+    char ser[128] = {0};        // buffer for Serial Output Data
+    char out[128] = {0};        // buffer for TCP reply data
 
     // Create TCP and Serial stuff
     tty = SDK_openPort(0, O_RDWR | O_NONBLOCK);  // open serial port
@@ -86,23 +86,24 @@ int main(void) {
                 break;
             }
 
-            tcp[n] = 0; // null-terminate request string
+            tcp[n] = "\0"; // null-terminate request string
 
             char *cmd;
+            char *response;
 
             char basic[] = ":01030000000CF0\r\n"; // HRS Read All command
 
             // Parse TCP Request
             if (strcmp(tcp, "PWM?") == 0) {
-                cmd = "TODO-special";
-            }else if (strcmp(tcp, "AUXPCFLOWRATE?") == 0) {
+                cmd = "TODO-special\0";
+            }else if (strcmp(tcp, "AUXPCWFLOWRATE?") == 0) {
                 cmd = "NOT SUPPORTED";
             }else if (strcmp(tcp, "AUXPCWTEMP?") == 0) {
-                cmd = "NOT SUPPORTED";
+                cmd = "NOT SUPPORTED\0";
             }else if (strcmp(tcp, "IDN") == 0) {
-                cmd = "HARDCODED";
+                cmd = "HARDCODED\0";
             }else if (strcmp(tcp, "VFDPWR?") == 0) {
-                cmd = "TODO-special";
+                cmd = "TODO-special\0";
             }else if (strcmp(tcp, "VFDACTPRESSURE?") == 0) {
                 cmd = basic;
             }else if (strcmp(tcp, "VFDFLOWRATE?") == 0) {
@@ -112,21 +113,9 @@ int main(void) {
             }else if (strcmp(tcp, "TEMP?") == 0) {
                 cmd = basic;
             }else if (strcmp(tcp, "FLTS1A?") == 0) {
-                cmd = "TODO-Errors";
+                cmd = "TODO-Errors\0";
             }else {
-                cmd = "INVALID CMD";
-            }
-
-            // out chiller cmd via serial
-            if (cmd[0] == ':') { // make sure it's a valid chiller cmd
-
-                char flush[256]; // flush buffer of any stray bytes
-                while (read(tty, flush, sizeof(flush)) > 0){
-                    ;
-                }
-
-                write(tty, cmd, strlen(cmd));
-                usleep(200000);
+                cmd = "INVALID CMD\0";
             }
 
             // WAIT FOR SERIAL RESPONSE (timeout protected) --------------------
@@ -147,7 +136,7 @@ int main(void) {
 
                         
             // hardcoded IDN string; needed even if serial coms doesn't happen
-            char IDN[] = "SMC, HRSHF*, SERIAL#, Software Version 1.1\0";
+            char IDN[] = "HRSHF-250\0";
 
             
             if (n > 56){ // if reply is long enough
@@ -169,38 +158,36 @@ int main(void) {
                 temp_pv = yoink_reg(ser, 1) / 10;
             }
 
-
-                if (strcmp(tcp, "PWM?") == 0) {
-                    snprintf(out, sizeof(out), "TODO-special");
-                }else if (strcmp(tcp, "AUXPCFLOWRATE?") == 0) {
-                    snprintf(out, sizeof(out), "NOT SUPPORTED");
-                }else if (strcmp(tcp, "AUXPCWTEMP?") == 0) {
-                    snprintf(out, sizeof(out), "NOT SUPPORTED");
-                }else if (strcmp(tcp, "IDN") == 0) {
-                    snprintf(out, sizeof(IDN), "%s", IDN);
-                }else if (strcmp(tcp, "VFDPWR?") == 0) {
-                    snprintf(out, sizeof(out), "TODO-special");
-                }else if (strcmp(tcp, "VFDACTPRESSURE?") == 0) {
-                    //snprintf(out, sizeof(out), "%.2f", pres_pv);
-                    snprintf(out, sizeof(ser), "%s", ser);
-                }else if (strcmp(tcp, "VFDFLOWRATE?") == 0) {
-                    snprintf(out, sizeof(out), "NOT SUPPORTED by HRS");
-                }else if (strcmp(tcp, "SETTEMP?") == 0) {
-                    //snprintf(out, sizeof(out), "%.1f", temp_sp);
-                    snprintf(out, sizeof(ser), "%s", ser);
-                }else if (strcmp(tcp, "TEMP?") == 0) {
-                    //snprintf(out, sizeof(out), "%.1f", temp_pv);
-                    snprintf(out, sizeof(ser), "%s", ser);
-                }else if (strcmp(tcp, "FLTS1A?") == 0) {
-                    snprintf(out, sizeof(out), "TODO-Errors");
-                }else {
-                    snprintf(out, sizeof(out), "INVALID CMD");
-                }
-
-                // send reply
-                write(cs, out, strlen(out));
+            if (strcmp(tcp, "PWM?") == 0) {
+                snprintf(out, sizeof(out), "TODO-special");
+            }else if (strcmp(tcp, "AUXPCFLOWRATE?") == 0) {
+                snprintf(out, sizeof(out), "NOT SUPPORTED");
+            }else if (strcmp(tcp, "AUXPCWTEMP?") == 0) {
+                snprintf(out, sizeof(out), "NOT SUPPORTED");
+            }else if (strcmp(tcp, "IDN") == 0) {
+                snprintf(out, sizeof(IDN), "%s\0", IDN);
+            }else if (strcmp(tcp, "VFDPWR?") == 0) {
+                snprintf(out, sizeof(out), "TODO-special");
+            }else if (strcmp(tcp, "VFDACTPRESSURE?") == 0) {
+                //snprintf(out, sizeof(out), "%.2f", pres_pv);
+                snprintf(out, sizeof(ser), "%s\0", ser);
+            }else if (strcmp(tcp, "VFDFLOWRATE?") == 0) {
+                snprintf(out, sizeof(out), "NOT SUPPORTED by HRS");
+            }else if (strcmp(tcp, "SETTEMP?") == 0) {
+                //snprintf(out, sizeof(out), "%.1f", temp_sp);
+                snprintf(out, sizeof(ser), "%s\0", ser);
+            }else if (strcmp(tcp, "TEMP?") == 0) {
+                //snprintf(out, sizeof(out), "%.1f", temp_pv);
+                snprintf(out, sizeof(ser), "%s\0", ser);
+            }else if (strcmp(tcp, "FLTS1A?") == 0) {
+                snprintf(out, sizeof(out), "TODO-Errors");
+            }else {
+                snprintf(out, sizeof(out), "INVALID CMD");
             }
+            // send reply
+            write(cs, out, strlen(out));
         }
+    }
 
     // this should never execute, if it is does something went wrong
     char exit[] = "main has exited";
