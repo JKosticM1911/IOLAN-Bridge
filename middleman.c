@@ -9,7 +9,7 @@
 #include "sdk_lib.h"             // DG1 SDK serial API
 
 
-#define PORT 10010               // TCP listen port
+#define PORT 10001               // TCP listen port
 #define SERIAL_TIMEOUT_MS 1000   // max wait for serial response
 
 // Helper: wait until fd becomes readable or timeout expires -------------------
@@ -40,6 +40,7 @@ static double yoink_reg(const char *cmd, size_t reg){
 int main(void) {
     int tty, ls, cs;           // tty=serial, ls=listen socket, cs=client socket
     struct sockaddr_in a;      // IPv4 socket address
+    
     socklen_t l;               // length of address struct
     char tcp[58] = {0};        // buffers for TCP Input data
     char ser[58] = {0};        // buffer for Serial Output Data
@@ -146,7 +147,7 @@ int main(void) {
 
                         
             // hardcoded IDN string; needed even if serial coms doesn't happen
-            char IDN[] = "SMC, HRSHF*, SERIAL#, Software Version 1.1";
+            char IDN[] = "SMC, HRSHF*, SERIAL#, Software Version 1.1\0";
 
             
             if (n > 56){ // if reply is long enough
@@ -166,6 +167,7 @@ int main(void) {
 
                 // discharge temp present value
                 temp_pv = yoink_reg(ser, 1) / 10;
+            }
 
 
                 if (strcmp(tcp, "PWM?") == 0) {
@@ -175,17 +177,20 @@ int main(void) {
                 }else if (strcmp(tcp, "AUXPCWTEMP?") == 0) {
                     snprintf(out, sizeof(out), "NOT SUPPORTED");
                 }else if (strcmp(tcp, "IDN") == 0) {
-                    snprintf(out, sizeof(out), "%s", IDN);
+                    snprintf(out, sizeof(IDN), "%s", IDN);
                 }else if (strcmp(tcp, "VFDPWR?") == 0) {
                     snprintf(out, sizeof(out), "TODO-special");
                 }else if (strcmp(tcp, "VFDACTPRESSURE?") == 0) {
-                    snprintf(out, sizeof(out), "%.2f", pres_pv);
+                    //snprintf(out, sizeof(out), "%.2f", pres_pv);
+                    snprintf(out, sizeof(ser), "%s", ser);
                 }else if (strcmp(tcp, "VFDFLOWRATE?") == 0) {
                     snprintf(out, sizeof(out), "NOT SUPPORTED by HRS");
                 }else if (strcmp(tcp, "SETTEMP?") == 0) {
-                    snprintf(out, sizeof(out), "%.1f", temp_sp);
+                    //snprintf(out, sizeof(out), "%.1f", temp_sp);
+                    snprintf(out, sizeof(ser), "%s", ser);
                 }else if (strcmp(tcp, "TEMP?") == 0) {
-                    snprintf(out, sizeof(out), "%.1f", temp_pv);
+                    //snprintf(out, sizeof(out), "%.1f", temp_pv);
+                    snprintf(out, sizeof(ser), "%s", ser);
                 }else if (strcmp(tcp, "FLTS1A?") == 0) {
                     snprintf(out, sizeof(out), "TODO-Errors");
                 }else {
@@ -194,12 +199,8 @@ int main(void) {
 
                 // send reply
                 write(cs, out, strlen(out));
-
-            }else{
-                write(cs, ser, strlen(ser));
             }
         }
-    }
 
     // this should never execute, if it is does something went wrong
     char exit[] = "main has exited";
