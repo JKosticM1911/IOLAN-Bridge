@@ -94,6 +94,17 @@ int main(void) {
 
             // char basic[] = ":01170000000C0000000000DC\r\n"; // HRSHF Read All command
 
+            // char pwm_cmd = ":0117521400010281\r\n"
+            // -> should only return compressor output percentage
+
+            //char return_cmd = ":0117520100010294\r\n"
+            // -> should only return chiller circulating fluid returning temp
+            // for use in determining if the chiller is heating or cooling
+
+            // huh; should create a single command from above that gets both;
+
+            char special[] = ":01175201000F0086\r\n";
+
             // Parse TCP Request, determine associated chiller command
             if (strcmp(tcp, "PWM?") == 0) {
                 snprintf(cmd, sizeof(cmd), "TODO-special");
@@ -145,33 +156,51 @@ int main(void) {
             double pres_pv = -1;
             double temp_sp = -1;
             double temp_pv = -1;
+            // double flow_pv = -1; // should only work for HRSHF
+
+            int alarm_one   = 0;
+            int alarm_two   = 0;
+            int alarm_three = 0;
+            int alarm_four  = 0;
 
                         
             // hardcoded IDN string; needed even if serial coms doesn't happen
-            char IDN[] = "HRSHF-250\0";
+            char IDN[] = "HRSHF-250";
 
-            
-            if (n > 56){ // if reply is long enough
+            // parsing block
+            if (n > 56){ // if reply is long enough 
                 
-                // VFD power percent and kW
-                //double vfd_per; // not supported by HRS (TODO)
-                //double vfd_kw;  // not supported by HRS (TODO)
+                if (strcmp(cmd, special) == 0) {
+                    // VFD power percent and kW
+                    //double vfd_per; // not supported by HRS (TODO)
+                    //double vfd_kw;  // not supported by HRS (TODO)
+                } 
 
-                // discharge pressure present value
-                pres_pv = yoink_reg(ser, 3) / 100;
+                // may need to add code here to read/write basic to get current chiller setpoint for comparison; <=== todo
 
-                // discharge Flow rate present value
-                //double flow_pv; // <================================ can't add until I have actual HRSHF
+                else if (strcmp(cmd, basic) == 0){
+                    // discharge pressure present value
+                    pres_pv = yoink_reg(ser, 3) / 100;  // HRS yoink (should also work for HRSHF)
 
-                // discharge temp set point
-                temp_sp = yoink_reg(ser, 12) / 10;
+                    // discharge Flow rate present value
+                    //flow_pv = yoink_reg(ser, 2) / 10; // HRSHF yoink (should NOT work for HRS, not supported)
 
-                // discharge temp present value
-                temp_pv = yoink_reg(ser, 1) / 10;
+                    // discharge temp set point
+                    temp_sp = yoink_reg(ser, 12) / 10; // HRS yoink (should also work for HRSHF)
+
+                    // discharge temp present value
+                    temp_pv = yoink_reg(ser, 1) / 10; // HRS yoink (should also work for HRSHF)
+
+                    // alarm flags
+                    alarm_one   = yoink_reg(ser, 5);
+                    alarm_two   = yoink_reg(ser, 6);
+                    alarm_three = yoink_reg(ser, 7);
+                    alarm_four  = yoink_reg(ser, 8);
+                }
             }
 
             if (strcmp(tcp, "PWM?") == 0) {
-                snprintf(out, sizeof(out), "TODO-special"); // can't test without actual HRSHF
+                snprintf(out, sizeof(out), "TODO-special"); // can't test without actual HRSHF <= TODO use special and logic; heating/cooling %
             }else if (strcmp(tcp, "AUXPCWFLOWRATE?") == 0) {
                 snprintf(out, sizeof(out), "NOT SUPPORTED");
             }else if (strcmp(tcp, "AUXPCWTEMP?") == 0) {
@@ -179,7 +208,7 @@ int main(void) {
             }else if (strcmp(tcp, "IDN") == 0) {
                 snprintf(out, sizeof(out), "%s", IDN);
             }else if (strcmp(tcp, "VFDPWR?") == 0) {
-                snprintf(out, sizeof(out), "TODO-special"); // can't test without actual HRSHF
+                snprintf(out, sizeof(out), "TODO-special"); // can't test without actual HRSHF <= TODO use basic and JPN; pump %
             }else if (strcmp(tcp, "VFDACTPRESSURE?") == 0) {
                 snprintf(out, sizeof(out), "%.2f", pres_pv);
                 //snprintf(out, sizeof(out), "%s", ser);
@@ -192,11 +221,13 @@ int main(void) {
                 snprintf(out, sizeof(out), "%.1f", temp_pv);
                 //snprintf(out, sizeof(out), "%s", ser);
             }else if (strcmp(tcp, "FLTS1A?") == 0) {
-                snprintf(out, sizeof(out), "TODO-Errors"); // can't test without actual HRSHF
+                snprintf(out, sizeof(out), "TODO-Errors"); // can't test without actual HRSHF <= TODO combine errors from basic, maybe add another cmd
             }else {
                 snprintf(out, sizeof(out), "INVALID CMD");
             }
             // send reply
+
+            //snprintf(out, sizeof(out), ser);
 
             write(cs, out, strlen(out));
         }
