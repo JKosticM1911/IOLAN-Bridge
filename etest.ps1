@@ -85,10 +85,10 @@ class test {
         Write-Host "clear               Clear the console`n"
 
         Write-Host "Chiller Commands:"
-        Write-Host "PWM?                Read current load in percent of maximum cooling capacity (25kW) based on compressor usage"
+        Write-Host "PWM?                Read current heating (100%) or cooling (-100%)"
         Write-Host "AUXPCWFLOWRATE?     Read current measured discharge flow rate in GPM"
         Write-Host "IDN                 Read chiller model"
-        Write-Host "VFDPWR?             Read current load in kw based on relative percent usage of maximum compressor usage (25kW)"
+        Write-Host "VFDPWR?             Read current compressor load in %"
         Write-Host "VFDACTPRESSURE?     Read current measured discharge pressure in PSI"
         Write-Host "SETTEMP?            Read current setpoint temperature"
         Write-Host "TEMP?               Read current measured discharge temperature"
@@ -128,7 +128,7 @@ class test {
 
     [void]recv_tcp() {
         # Receive response via tcp
-        if ($this.TCP.Poll(1000000, [System.Net.Sockets.SelectMode]::SelectRead)) {
+        if ($this.TCP.Poll(200000, [System.Net.Sockets.SelectMode]::SelectRead)) {
             # atempt to read count chars from TCP into buffer
             $count = $this.TCP.Receive($this.rxbuff)
             

@@ -63,7 +63,8 @@ int main(void) {
             response = "SMC, HRSHF*, SERIAL#, Software Version 1.1";
 
             // Parse TCP Request
-            if (strcmp(tcp, "PWM?") == 0) { // format (+/- XX.X)
+            if (strcmp(tcp, "PWM?\r") == 0) { 
+                // format (+/- XX.X)
                 response = "0";
 
             }else if (strcmp(tcp, "VFDACTPRESSURE?\r") == 0) { 

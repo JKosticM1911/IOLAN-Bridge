@@ -10,7 +10,7 @@
 
 
 #define PORT 10001               // TCP listen port
-#define SERIAL_TIMEOUT_MS 200    // max wait for serial response
+#define SERIAL_TIMEOUT_MS 250    // max wait for serial response
 
 // Helper: wait until fd becomes readable or timeout expires -------------------
 static int wait_fd(int fd, int ms) {
@@ -43,7 +43,8 @@ int main(void) {
     
     socklen_t l;                // length of address struct
     char tcp[128] = {0};        // buffers for TCP Input data
-    char ser[128] = {0};        // buffer for Serial Output Data
+    char cmd[128] = {0};        // buffer for Serial commands to chiller
+    char ser[128] = {0};        // buffer for Serial data from chiller
     char out[128] = {0};        // buffer for TCP reply data
 
     // Create TCP and Serial stuff
@@ -77,6 +78,7 @@ int main(void) {
 
             memset(tcp, 0, sizeof(tcp));
             memset(ser, 0, sizeof(ser));
+            memset(cmd, 0, sizeof(cmd));
             memset(out, 0, sizeof(out));
 
             int n = read(cs, tcp, sizeof(tcp) - 1); // read TCP request
@@ -86,47 +88,57 @@ int main(void) {
                 break;
             }
 
-            tcp[n] = "\0"; // null-terminate request string
-
-            char *cmd;
-            char *response;
+            tcp[n] = '\0'; // null-terminate request string
 
             char basic[] = ":01030000000CF0\r\n"; // HRS Read All command
 
-            // Parse TCP Request
+            // char basic[] = ":01170000000C0000000000DC\r\n"; // HRSHF Read All command
+
+            // Parse TCP Request, determine associated chiller command
             if (strcmp(tcp, "PWM?") == 0) {
-                cmd = "TODO-special\0";
+                snprintf(cmd, sizeof(cmd), "TODO-special");
+                // <- ============================================== need to test with actual HRSHF
             }else if (strcmp(tcp, "AUXPCWFLOWRATE?") == 0) {
-                cmd = "NOT SUPPORTED";
+                snprintf(cmd, sizeof(cmd), "NOT SUPPORTED");
             }else if (strcmp(tcp, "AUXPCWTEMP?") == 0) {
-                cmd = "NOT SUPPORTED\0";
+                snprintf(cmd, sizeof(cmd), "NOT SUPPORTED");
             }else if (strcmp(tcp, "IDN") == 0) {
-                cmd = "HARDCODED\0";
+                snprintf(cmd, sizeof(cmd), "HARDCODED");
             }else if (strcmp(tcp, "VFDPWR?") == 0) {
-                cmd = "TODO-special\0";
+                snprintf(cmd, sizeof(cmd), "TODO-special");
+                // <================================================ need to test with actual HRSHF
             }else if (strcmp(tcp, "VFDACTPRESSURE?") == 0) {
-                cmd = basic;
+                snprintf(cmd, sizeof(cmd), basic, "%s");
             }else if (strcmp(tcp, "VFDFLOWRATE?") == 0) {
-                cmd = basic;
+                snprintf(cmd, sizeof(cmd), basic, "%s");
             }else if (strcmp(tcp, "SETTEMP?") == 0) {
-                cmd = basic;
+                snprintf(cmd, sizeof(cmd), basic, "%s");
             }else if (strcmp(tcp, "TEMP?") == 0) {
-                cmd = basic;
+                snprintf(cmd, sizeof(cmd), basic, "%s");
             }else if (strcmp(tcp, "FLTS1A?") == 0) {
-                cmd = "TODO-Errors\0";
+                snprintf(cmd, sizeof(cmd), "TODO-Errors");
+                // <=============================================== need to test with actual HRSHF
             }else {
-                cmd = "INVALID CMD\0";
+                snprintf(cmd, sizeof(cmd), "INVALID CMD");
             }
 
-            // WAIT FOR SERIAL RESPONSE (timeout protected) --------------------
-            n = 0; // reset response length
-                
-            if (wait_fd(tty, SERIAL_TIMEOUT_MS) > 0) { // wait for data
-                n = read(tty, ser, sizeof(ser) - 1);   // read serial response
-               if (n < 0) n = 0;                      // normalize error to empty response
-            }
+            if (cmd[0] == ':') { // only if a valid chiller command is selected
+                write(tty, cmd, strlen(cmd));
 
-            ser[n] = 0; // null-terminate serial response
+                // Serial Read -----------------------------------------------------
+                n = 0;
+                int wait = SERIAL_TIMEOUT_MS;           // long wait for the first byte
+                while (n < (int)sizeof(ser) - 1 && wait_fd(tty, wait) > 0) {
+                    int r = read(tty, ser + n, sizeof(ser) - 1 - n);
+                if (r <= 0) break;
+                    n += r;
+                if (ser[n - 1] == '\n') break;          // complete frame received
+                    wait = 50;                          // then only allow short gaps
+                }
+
+                ser[n] = '\0'; // null-terminate serial response
+
+            }
 
             // Parse Chiller Response ------------------------------------------
 
@@ -149,7 +161,7 @@ int main(void) {
                 pres_pv = yoink_reg(ser, 3) / 100;
 
                 // discharge Flow rate present value
-                //double flow_pv; // not supported by HRS  
+                //double flow_pv; // <================================ can't add until I have actual HRSHF
 
                 // discharge temp set point
                 temp_sp = yoink_reg(ser, 12) / 10;
@@ -159,32 +171,33 @@ int main(void) {
             }
 
             if (strcmp(tcp, "PWM?") == 0) {
-                snprintf(out, sizeof(out), "TODO-special");
-            }else if (strcmp(tcp, "AUXPCFLOWRATE?") == 0) {
+                snprintf(out, sizeof(out), "TODO-special"); // can't test without actual HRSHF
+            }else if (strcmp(tcp, "AUXPCWFLOWRATE?") == 0) {
                 snprintf(out, sizeof(out), "NOT SUPPORTED");
             }else if (strcmp(tcp, "AUXPCWTEMP?") == 0) {
                 snprintf(out, sizeof(out), "NOT SUPPORTED");
             }else if (strcmp(tcp, "IDN") == 0) {
-                snprintf(out, sizeof(IDN), "%s\0", IDN);
+                snprintf(out, sizeof(out), "%s", IDN);
             }else if (strcmp(tcp, "VFDPWR?") == 0) {
-                snprintf(out, sizeof(out), "TODO-special");
+                snprintf(out, sizeof(out), "TODO-special"); // can't test without actual HRSHF
             }else if (strcmp(tcp, "VFDACTPRESSURE?") == 0) {
-                //snprintf(out, sizeof(out), "%.2f", pres_pv);
-                snprintf(out, sizeof(ser), "%s\0", ser);
+                snprintf(out, sizeof(out), "%.2f", pres_pv);
+                //snprintf(out, sizeof(out), "%s", ser);
             }else if (strcmp(tcp, "VFDFLOWRATE?") == 0) {
-                snprintf(out, sizeof(out), "NOT SUPPORTED by HRS");
+                snprintf(out, sizeof(out), "NOT SUPPORTED by HRS"); // <===== can't verify without actual HRSHF
             }else if (strcmp(tcp, "SETTEMP?") == 0) {
-                //snprintf(out, sizeof(out), "%.1f", temp_sp);
-                snprintf(out, sizeof(ser), "%s\0", ser);
+                snprintf(out, sizeof(out), "%.1f", temp_sp);
+                //snprintf(out, sizeof(out), "%s", ser);
             }else if (strcmp(tcp, "TEMP?") == 0) {
-                //snprintf(out, sizeof(out), "%.1f", temp_pv);
-                snprintf(out, sizeof(ser), "%s\0", ser);
+                snprintf(out, sizeof(out), "%.1f", temp_pv);
+                //snprintf(out, sizeof(out), "%s", ser);
             }else if (strcmp(tcp, "FLTS1A?") == 0) {
-                snprintf(out, sizeof(out), "TODO-Errors");
+                snprintf(out, sizeof(out), "TODO-Errors"); // can't test without actual HRSHF
             }else {
                 snprintf(out, sizeof(out), "INVALID CMD");
             }
             // send reply
+
             write(cs, out, strlen(out));
         }
     }
